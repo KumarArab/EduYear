@@ -35,6 +35,13 @@ dependencies:
   flutter_swiper: ^1.1.6
   google_sign_in: ^4.5.1
   shared_preferences: ^0.5.8
+  http: ^0.12.2
+  file_picker: ^1.13.3
+  firebase_storage: ^3.1.6
+  cloud_firestore: ^0.13.7
+
+
+
 
 
 dev_dependencies:
