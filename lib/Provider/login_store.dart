@@ -1,6 +1,10 @@
 import 'package:app/Screens/home_screen.dart';
-import 'package:app/Screens/otp_screen.dart';
-import 'package:app/Screens/signup_methods.dart';
+import 'package:app/Screens/Login-System/otp_screen.dart';
+import 'package:app/Screens/Login-System/signup_methods.dart';
+import 'package:app/helpers/user_data.dart';
+import 'package:app/helpers/user_maintainance.dart';
+import 'package:app/models/user.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
@@ -10,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LoginStore with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   GoogleSignIn _googleSignIn = GoogleSignIn();
+  UserMaintainer userMaintainer = UserMaintainer();
+
   String actualCode;
 
   bool isLoginLoading = false;
@@ -21,8 +27,8 @@ class LoginStore with ChangeNotifier {
   GlobalKey<ScaffoldState> loginScaffoldKey = GlobalKey<ScaffoldState>();
   GlobalKey<ScaffoldState> otpScaffoldKey = GlobalKey<ScaffoldState>();
 
-  // CollectionReference collectionReference =
-  //     Firestore.instance.collection("Users");
+  CollectionReference collectionReference =
+      Firestore.instance.collection("Users");
 
   List images = [
     "assets/img/manage.png",
@@ -137,10 +143,10 @@ class LoginStore with ChangeNotifier {
     isOtpLoading = true;
 
     firebaseUser = result.user;
-
-    Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-        (Route<dynamic> route) => false);
+    await userMaintainer.checkUserExistance(firebaseUser, context, "phone");
+    // Navigator.of(context).pushAndRemoveUntil(
+    //     MaterialPageRoute(builder: (_) => HomeScreen()),
+    //     (Route<dynamic> route) => false);
 
     isLoginLoading = false;
     isOtpLoading = false;
@@ -159,6 +165,8 @@ class LoginStore with ChangeNotifier {
         MaterialPageRoute(builder: (_) => SignUpMethods()), (route) => false);
   }
 
+  //SignUp/In with GOOGLE
+
   Future<void> signInWithGoogle(BuildContext context) async {
     GoogleSignInAccount googleSignInAccount = await _googleSignIn.signIn();
     GoogleSignInAuthentication googleSignInAuthentication =
@@ -169,57 +177,62 @@ class LoginStore with ChangeNotifier {
     AuthResult authResult = await _auth.signInWithCredential(authCredential);
 
     firebaseUser = authResult.user;
+    await userMaintainer.checkUserExistance(firebaseUser, context, "google");
     // await saveDetails(firebaseUser);
     // await uploadUserInfo();
-
-    Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => HomeScreen()),
-        (Route<dynamic> route) => false);
   }
 
-  // Future<void> saveDetails(FirebaseUser firebaseUser) async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   if (prefs.getString('uid') == null ||
-  //       prefs.getString('uid') != firebaseUser.uid) {
-  //     await prefs.setString("name", firebaseUser.displayName);
-  //     await prefs.setString("email", firebaseUser.email);
-  //     await prefs.setString("phone", firebaseUser.phoneNumber);
-  //     await prefs.setString("uid", firebaseUser.uid);
-  //     await prefs.setString("picUrl", firebaseUser.photoUrl);
-  //   }
-  // }
+  Future<void> saveDetails(FirebaseUser firebaseUser) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString('uid') == null ||
+        prefs.getString('uid') != firebaseUser.uid) {
+      await prefs.setString("name", firebaseUser.displayName);
+      await prefs.setString("email", firebaseUser.email);
+      await prefs.setString("phone", firebaseUser.phoneNumber);
+      await prefs.setString("uid", firebaseUser.uid);
+      await prefs.setString("picUrl", firebaseUser.photoUrl);
+      await prefs.setInt("noOfPosts", 0);
+      await prefs.setInt("followers", 0);
+      await prefs.setInt("followings", 0);
+    }
+  }
 
-  // Future<void> fetchDetails() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   username = prefs.getString("name");
-  //   phone = prefs.getString("phone");
-  //   email = prefs.getString("email");
-  //   uid = prefs.getString("uid");
-  //   photourl = prefs.getString('picUrl');
-  //   notifyListeners();
-  // }
+  Future<void> fetchDetails() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    username = prefs.getString("name");
+    phone = prefs.getString("phone");
+    email = prefs.getString("email");
+    uid = prefs.getString("uid");
+    photourl = prefs.getString('picUrl');
+    notifyListeners();
+  }
 
-  // Future<void> uploadUserInfo() async {
-  //   SharedPreferences prefs = await SharedPreferences.getInstance();
-  //   Map<String, dynamic> userInfo = {
-  //     'name': prefs.getString("name"),
-  //     'email': prefs.getString("email"),
-  //     'uid': prefs.getString("uid"),
-  //     'phone': prefs.getString("phone"),
-  //     'pic': prefs.getString("picUrl"),
-  //   };
-  //   print(
-  //       "---------------------------------Saving----------------------------------");
-  //   print(
-  //       "---------------------------------${prefs.getString('uid')}----------------------------------");
-  //   try {
-  //     await collectionReference
-  //         .document(prefs.getString('uid'))
-  //         .setData(userInfo);
-  //   } catch (e) {
-  //     print(e);
-  //   }
-  // }
+  Future<void> uploadUserInfo() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    Map<String, dynamic> userInfo = {
+      'name': prefs.getString("name"),
+      'email': prefs.getString("email"),
+      'uid': prefs.getString("uid"),
+      'phone': prefs.getString("phone"),
+      'pic': prefs.getString("picUrl"),
+    };
+    print(
+        "---------------------------------Saving----------------------------------");
+    print(
+        "---------------------------------${prefs.getString('uid')}----------------------------------");
+    try {
+      await collectionReference
+          .document(prefs.getString('uid'))
+          .setData(userInfo);
+    } catch (e) {
+      print(e);
+    }
+  }
+
+  Future<FirebaseUser> getCurrentUser() async {
+    FirebaseUser currentUser = await _auth.currentUser();
+    return currentUser;
+  }
 
   // Future<User> getUserDetails() async {
   //   // GoogleSignInAccount currentUser = await _googleSignIn.currentUser;
@@ -230,6 +243,7 @@ class LoginStore with ChangeNotifier {
   //       await collectionReference.document(currentUser.uid).get();
 
   //   return User(
-  //       uid: documentSnapshot.data['uid'], name: documentSnapshot.data['name']);
+  //       uid: documentSnapshot.data['uid'],
+  //       username: documentSnapshot.data['name']);
   // }
 }

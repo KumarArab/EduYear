@@ -1,8 +1,8 @@
 import 'package:app/Provider/login_store.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../widgets/button.dart';
-import '../widgets/textbox.dart';
+import '../../widgets/button.dart';
+import '../../widgets/textbox.dart';
 
 class OtpScreen extends StatelessWidget {
   TextEditingController otp = TextEditingController();

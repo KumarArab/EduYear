@@ -1,140 +1,144 @@
 import 'package:app/Provider/login_store.dart';
+import 'package:app/Screens/Home%20Views/docs_view.dart';
+import 'package:app/Screens/Home%20Views/image_view.dart';
+import 'package:app/Screens/Home%20Views/poll_view.dart';
+import 'package:app/Screens/Home%20Views/tweet_view.dart';
+import 'package:app/Screens/post_Image.dart';
+import 'package:app/Screens/user_profile.dart';
+import 'package:app/models/image_post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../widgets/button.dart';
 import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
+  static const String routeName = "/home";
+
   @override
   _HomeScreenState createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  PageController _controller = PageController(
+    initialPage: 0,
+  );
   Map<String, String> _paths;
-  bool isUploadig = false;
-  String _extension;
-  FileType _pickType;
-  GlobalKey<ScaffoldState> _imagepickScaffold = GlobalKey();
-  final FirebaseStorage storage = FirebaseStorage.instance;
+
   Future<void> openFileExplorer() async {
     try {
-      setState(() {
-        isUploadig = true;
-      });
+      // setState(() {
+      //   isUploadig = true;
+      // });
       _paths = await FilePicker.getMultiFilePath(type: FileType.image);
-      uploadToFirebase();
-      setState(() {
-        isUploadig = false;
+      Map<String, String> paths = _paths;
+      paths.forEach((key, value) {
+        print("$key : $value");
       });
+      Navigator.of(context).pushNamed(
+        PostImage.routeName,
+        arguments: ImagePost(paths: paths),
+      );
+      // setState(() {
+      //   isUploadig = false;
+      // });
     } on PlatformException catch (e) {
       print(e.toString());
     }
   }
 
-  uploadToFirebase() {
-    _paths.forEach((filename, filePath) async {
-      print(filename);
-      _extension = filename.toString().split(".").last;
-      // StorageReference storageReference =
-      //     FirebaseStorage.instance.ref().child(filename);
-      // storageReference.getDownloadURL().addOnSuccessListener(new OnSuccessListener<Uri>(){})
-      StorageTaskSnapshot snapshot = await storage
-          .ref()
-          .child("images/$filename")
-          .putFile(File(filePath))
-          .onComplete;
-      if (snapshot.error == null) {
-        final String downloadUrl = await snapshot.ref.getDownloadURL();
-        await Firestore.instance
-            .collection("images")
-            .add({"url": downloadUrl, "name": filename});
-        setState(() {
-          isUploadig = false;
-        });
-      } else {
-        print('Error from image repo ${snapshot.error.toString()}');
-        throw ('This file is not an image');
-      }
-    });
+  showAlertDailogBox(BuildContext context) {
+    return showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Center(
+            child: Text("Menu"),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: Icon(Icons.add),
+                title: Text("Add new post"),
+                onTap: () => openFileExplorer(),
+              ),
+              ListTile(
+                leading: Icon(Icons.search),
+                title: Text("Search"),
+              ),
+              ListTile(
+                leading: Icon(Icons.supervised_user_circle),
+                title: Text("Profile"),
+                onTap: () {
+                  Navigator.of(context).popAndPushNamed('/user-profile');
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final logindata = Provider.of<LoginStore>(context);
-    return Scaffold(
-      key: _imagepickScaffold,
-      backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title:
-            Text(logindata.username != null ? logindata.username : "No Data"),
-        actions: [
-          IconButton(
-            onPressed: openFileExplorer,
-            icon: isUploadig
-                ? CircularProgressIndicator()
-                : Icon(Icons.ac_unit, color: Colors.white),
-          ),
-          FlatButton.icon(
-            label: Text(
-              "Log Out",
-              style: TextStyle(
-                color: Colors.white,
-              ),
-            ),
-            icon: Icon(Icons.cancel, color: Colors.white),
+    return Stack(
+      children: [
+        PageView(
+          controller: _controller,
+          children: [
+            ImageSection(),
+            TweetSection(),
+            PollSection(),
+            DocsSection(),
+          ],
+        ),
+        Positioned(
+          bottom: 20,
+          right: 20,
+          child: FloatingActionButton(
+            backgroundColor: Colors.black,
             onPressed: () {
-              Provider.of<LoginStore>(context, listen: false).signOut(context);
+              showAlertDailogBox(context);
             },
-          )
-        ],
-      ),
-      body: StreamBuilder(
-        stream: Firestore.instance.collection("images").snapshots(),
-        builder: (context, snapshot) {
-          print(snapshot.data.documents.length);
-          return !snapshot.hasData
-              ? Text('PLease Wait')
-              : ListView.builder(
-                  itemCount: snapshot.data.documents.length,
-                  itemBuilder: (context, index) {
-                    DocumentSnapshot products = snapshot.data.documents[index];
-                    return Container(child: Image.network(products["url"]));
-                  },
-                );
-        },
-      ),
+            child: Icon(Icons.menu, color: Colors.white),
+          ),
+        ),
+      ],
     );
   }
 }
 
-// StorageTaskSnapshot snapshot = await storage
-//         .ref()
-//         .child("images/$filename")
-//         .putFile(File(filename))
-//         .onComplete;
-//         if (snapshot.error == null) {
-//           final String downloadUrl =
-//               await snapshot.ref.getDownloadURL();
-//           await Firestore.instance
-//               .collection("images")
-//               .add({"url": downloadUrl, "name": filename});
-//           setState(() {
-//             isUploadig = false;
-//           });
-//           final snackBar =
-//               SnackBar(
-//                 key: _imagepickScaffold,
-//                 content: Text('Yay! Success'));
-//           Scaffold.of(context).showSnackBar(snackBar);
-//         } else {
-//           print(
-//               'Error from image repo ${snapshot.error.toString()}');
-//           throw ('This file is not an image');
-//         }
-//       });
+// Positioned(
+//   right: 20,
+//   top: 40,
+//   child: CircleAvatar(
+//     backgroundColor: Colors.black,
+//     radius: 25,
+//     child: Padding(
+//       padding: EdgeInsets.all(10),
+//       child: GestureDetector(
+//         onTap: () => Navigator.push(
+//           context,
+//           MaterialPageRoute(
+//             builder: (ctx) => UserProfile(),
+//           ),
+//         ),
+//         child: ClipRRect(
+//           borderRadius: BorderRadius.circular(100),
+//           child: SvgPicture.asset(
+//             "assets/img/user(0).svg",
+//             color: Colors.grey,
+//             fit: BoxFit.cover,
+//           ),
+//         ),
+//       ),
+//     ),
+//   ),
+// )
