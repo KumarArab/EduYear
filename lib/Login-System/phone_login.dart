@@ -1,8 +1,8 @@
 import 'package:app/Provider/login_store.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../widgets/button.dart';
-import '../../widgets/textbox.dart';
+import 'package:app/widgets/button.dart';
+import 'package:app/widgets/textbox.dart';
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -80,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextBox(
                         phoneNo: phoneNo,
                         hintText: "  Enter in [+91] format",
+                        keyboardType: TextInputType.phone,
                       ),
                       Container(
                         width: MediaQuery.of(context).size.width * 0.8,

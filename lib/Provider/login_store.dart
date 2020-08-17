@@ -1,6 +1,6 @@
+import 'package:app/Login-System/otp_screen.dart';
+import 'package:app/Login-System/signup_methods.dart';
 import 'package:app/Screens/home_screen.dart';
-import 'package:app/Screens/Login-System/otp_screen.dart';
-import 'package:app/Screens/Login-System/signup_methods.dart';
 import 'package:app/helpers/user_data.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:app/models/user.dart';

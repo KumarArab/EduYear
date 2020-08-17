@@ -1,7 +1,11 @@
+import 'package:app/Login-System/get-details.dart';
 import 'package:app/Provider/login_store.dart';
-import 'package:app/Screens/Login-System/get-details.dart';
 import 'package:app/Screens/home_screen.dart';
-import 'package:app/Screens/post_Image.dart';
+import 'package:app/Screens/post_screens/post_Image.dart';
+import 'package:app/Screens/post_screens/post_document.dart';
+import 'package:app/Screens/post_screens/post_polls.dart';
+import 'package:app/Screens/post_screens/post_tweet.dart';
+import 'package:app/Screens/Search%20Views/search_screen.dart';
 import 'package:app/Screens/splash_screen.dart';
 import 'package:app/Screens/user_profile.dart';
 import 'package:flutter/material.dart';
@@ -34,6 +38,10 @@ class _AppState extends State<App> {
           UserProfile.routeName: (BuildContext context) => UserProfile(),
           PostImage.routeName: (BuildContext context) => PostImage(),
           GetDetails.routeName: (BuildContext context) => GetDetails(),
+          PostTweet.routeName: (BuildContext context) => PostTweet(),
+          PostPolls.routeName: (BuildContext context) => PostPolls(),
+          PostDocument.routeName: (BuildContext context) => PostDocument(),
+          SearchScreen.routeName: (BuildContext context) => SearchScreen(),
         },
       ),
     );

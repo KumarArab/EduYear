@@ -1,6 +1,6 @@
 import 'dart:ui';
+import 'package:app/Login-System/phone_login.dart';
 import 'package:app/Provider/login_store.dart';
-import 'package:app/Screens/Login-System/phone_login.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';

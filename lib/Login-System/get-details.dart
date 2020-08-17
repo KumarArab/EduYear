@@ -38,24 +38,34 @@ class _GetDetailsState extends State<GetDetails> {
     userProfile["uid"] = user.uid;
     userProfile["email"] = user.email;
     userProfile["phoneNumber"] = user.phoneNumber;
+    userProfile["no_of_posts"] = "0";
 
-    await collectionReference.document("${user.email}").setData(userProfile);
+    if (user.email != null) {
+      await collectionReference.document("${user.email}").setData(userProfile);
+    } else {
+      await collectionReference
+          .document("${user.phoneNumber}")
+          .setData(userProfile);
+    }
     await userMaintainer.saveUserDataToLocal(userProfile);
     Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => HomeScreen()),
         (Route<dynamic> route) => false);
   }
 
-  Future<void> uploadNewUserImage(String uid) async {
+  Future<void> uploadNewUserImage(FirebaseUser user) async {
+    final String id = user.email != null ? user.email : user.phoneNumber;
     if (newImagePath != null) {
       StorageTaskSnapshot snapshot = await storage
           .ref()
-          .child("$uid/profile_pic")
+          .child("$id/profile_pic")
           .putFile(File(newImagePath))
           .onComplete;
       if (snapshot.error == null) {
         downloadUrl = await snapshot.ref.getDownloadURL();
       }
+    } else {
+      downloadUrl = user.photoUrl;
     }
   }
 
@@ -174,7 +184,7 @@ class _GetDetailsState extends State<GetDetails> {
                       ),
                       child: FlatButton(
                         onPressed: () {
-                          uploadNewUserImage(args.uid)
+                          uploadNewUserImage(args)
                               .then((_) => createNewProfileNode(args));
                         },
                         child: Text(

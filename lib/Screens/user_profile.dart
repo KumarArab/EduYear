@@ -1,4 +1,6 @@
 import 'package:app/Provider/login_store.dart';
+import 'package:app/Screens/profile_posts.dart';
+import 'package:app/helpers/user_maintainance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
@@ -14,10 +16,25 @@ class UserProfile extends StatefulWidget {
 class _UserProfileState extends State<UserProfile> {
   Map<String, String> _userProfile = Map<String, String>();
   bool isLoading;
+  UserMaintainer userMaintainer = UserMaintainer();
+  int imagePostCount = 0,
+      tweetPostCount = 0,
+      pollPostCount = 0,
+      docPostCount = 0;
 
   @override
   void didChangeDependencies() async {
     await fetchUserDetails();
+    int tempImageCount = await userMaintainer.countImagePost();
+    int tempTweetCount = await userMaintainer.countTweetPost();
+    int tempPollCount = await userMaintainer.countPollPost();
+    int tempDocCount = await userMaintainer.countDocPost();
+    setState(() {
+      imagePostCount = tempImageCount;
+      tweetPostCount = tempTweetCount;
+      pollPostCount = tempPollCount;
+      docPostCount = tempDocCount;
+    });
     super.didChangeDependencies();
   }
 
@@ -37,9 +54,10 @@ class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.teal,
+      backgroundColor: Colors.pink,
       appBar: AppBar(
-        backgroundColor: Colors.teal,
+        elevation: 0,
+        backgroundColor: Colors.pink,
         title: isLoading
             ? CircularProgressIndicator()
             : Text(_userProfile["name"]),
@@ -60,7 +78,6 @@ class _UserProfileState extends State<UserProfile> {
             Container(
               height: MediaQuery.of(context).size.height * 0.2,
               width: MediaQuery.of(context).size.height * 0.2,
-              padding: EdgeInsets.all(20),
               margin: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -78,7 +95,7 @@ class _UserProfileState extends State<UserProfile> {
             ),
             Expanded(
               child: Container(
-                padding: EdgeInsets.all(20),
+                padding: EdgeInsets.only(top: 30),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(50),
@@ -87,7 +104,6 @@ class _UserProfileState extends State<UserProfile> {
                   color: Colors.white,
                 ),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -118,12 +134,54 @@ class _UserProfileState extends State<UserProfile> {
                         ),
                       ],
                     ),
-                    FlatButton(
-                      onPressed: () {
-                        Provider.of<LoginStore>(context, listen: false)
-                            .signOut(context);
-                      },
-                      child: Text("SignOut"),
+                    Expanded(
+                      child: Container(
+                        padding: EdgeInsets.all(20),
+                        child: ListView(
+                          children: [
+                            ListTile(
+                              title: Text("Images"),
+                              trailing: Text(imagePostCount.toString()),
+                              onTap: () => imagePostCount != 0
+                                  ? Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) =>
+                                            ProfilePost(type: "Image-Posts"),
+                                      ),
+                                    )
+                                  : {},
+                            ),
+                            ListTile(
+                              title: Text("Tweets"),
+                              trailing: Text(tweetPostCount.toString()),
+                            ),
+                            ListTile(
+                              title: Text("Polls"),
+                              trailing: Text(pollPostCount.toString()),
+                            ),
+                            ListTile(
+                              title: Text("Docs"),
+                              trailing: Text(docPostCount.toString()),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      color: Colors.pink,
+                      child: FlatButton(
+                        onPressed: () {
+                          Provider.of<LoginStore>(context, listen: false)
+                              .signOut(context);
+                        },
+                        child: Text("SignOut",
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 20,
+                                color: Colors.white)),
+                      ),
                     ),
                   ],
                 ),

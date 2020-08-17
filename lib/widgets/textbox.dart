@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 class TextBox extends StatelessWidget {
   final TextEditingController phoneNo;
   final String hintText;
+  final TextInputType keyboardType;
 
-  TextBox({this.phoneNo, this.hintText});
+  TextBox({this.phoneNo, this.hintText, this.keyboardType});
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +27,7 @@ class TextBox extends StatelessWidget {
             spreadRadius: 3.0)
       ]),
       child: TextField(
+        keyboardType: keyboardType,
         decoration: InputDecoration(
           border: InputBorder.none,
           hintText: hintText,

@@ -3,12 +3,18 @@ import 'package:app/Screens/Home%20Views/docs_view.dart';
 import 'package:app/Screens/Home%20Views/image_view.dart';
 import 'package:app/Screens/Home%20Views/poll_view.dart';
 import 'package:app/Screens/Home%20Views/tweet_view.dart';
-import 'package:app/Screens/post_Image.dart';
+import 'package:app/Screens/post_screens/post_Image.dart';
+import 'package:app/Screens/post_screens/post_document.dart';
+import 'package:app/Screens/post_screens/post_polls.dart';
+import 'package:app/Screens/post_screens/post_tweet.dart';
+import 'package:app/Screens/Search%20Views/search_screen.dart';
 import 'package:app/Screens/user_profile.dart';
+import 'package:app/helpers/user_maintainance.dart';
 import 'package:app/models/image_post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
@@ -25,6 +31,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
+  UserMaintainer userMaintainer = UserMaintainer();
   PageController _controller = PageController(
     initialPage: 0,
   );
@@ -52,6 +59,16 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  Future<void> openPdfExplorer() async {
+    String docPath = await FilePicker.getFilePath(type: FileType.custom);
+    String _extension = docPath.toString().split(".").last;
+    print(docPath);
+    if (_extension == "pdf") {
+      Navigator.of(context)
+          .pushNamed(PostDocument.routeName, arguments: docPath);
+    }
+  }
+
   showAlertDailogBox(BuildContext context) {
     return showDialog(
       context: context,
@@ -69,8 +86,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 onTap: () => openFileExplorer(),
               ),
               ListTile(
+                leading: Icon(Icons.text_rotation_none),
+                title: Text("Add new tweet"),
+                onTap: () => Navigator.pushNamed(context, PostTweet.routeName),
+              ),
+              ListTile(
+                leading: Icon(Icons.poll),
+                title: Text("Add new Poll"),
+                onTap: () => Navigator.pushNamed(context, PostPolls.routeName),
+              ),
+              ListTile(
+                leading: Icon(Icons.picture_as_pdf),
+                title: Text("Add new Pdf"),
+                onTap: () => openPdfExplorer(),
+              ),
+              ListTile(
                 leading: Icon(Icons.search),
                 title: Text("Search"),
+                onTap: () =>
+                    Navigator.pushNamed(context, SearchScreen.routeName),
               ),
               ListTile(
                 leading: Icon(Icons.supervised_user_circle),

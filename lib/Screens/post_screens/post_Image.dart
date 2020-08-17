@@ -14,6 +14,7 @@ class PostImage extends StatefulWidget {
 }
 
 class _PostImageState extends State<PostImage> {
+  bool isUploading = false;
   List<String> filepaths = [];
 
   String _extension;
@@ -31,11 +32,15 @@ class _PostImageState extends State<PostImage> {
   Future<void> uploadToFirebase(Map<String, String> pathMap) async {
     int i = 0;
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String uid = prefs.getString("uid");
-    int noOfPosts = prefs.getInt("noOfPosts");
+    String id = prefs.getString("email") != null
+        ? prefs.getString("email")
+        : prefs.getString("phoneNumber");
+    int noOfPosts = prefs.getInt("no_of_posts");
+    String name = prefs.getString("name");
+
     DocumentReference documentReference =
-        Firestore.instance.collection("Posts").document("post_no_$noOfPosts");
-    List<String> imageUrls = [];
+        Firestore.instance.collection("Image-Posts").document("$id-$noOfPosts");
+    //List<String> imageUrls = [];
     Map<String, String> imagesMap = Map<String, String>();
 
     pathMap.forEach((filename, filePath) async {
@@ -43,7 +48,7 @@ class _PostImageState extends State<PostImage> {
 
       StorageTaskSnapshot snapshot = await storage
           .ref()
-          .child("$uid/images/post_no_$noOfPosts/$filename")
+          .child("$id/images/post_no_$noOfPosts/$filename")
           .putFile(File(filePath))
           .onComplete;
       if (snapshot.error == null) {
@@ -79,10 +84,18 @@ class _PostImageState extends State<PostImage> {
       {
         // "images": imagesMap,
         "caption": caption,
-        "tags": tagMap,
+        "tags": tagList,
+        "user_id": id,
+        "name": name,
       },
     );
-    await prefs.setInt("noOfPosts", noOfPosts + 1);
+    noOfPosts += 1;
+    await Firestore.instance
+        .collection("Users")
+        .document(id)
+        .updateData({"no_of_posts": noOfPosts.toString()});
+    await prefs.setInt("no_of_posts", noOfPosts);
+    Navigator.of(context).pop();
   }
 
   @override
@@ -144,19 +157,24 @@ class _PostImageState extends State<PostImage> {
                   Container(
                     padding: EdgeInsets.all(10),
                     color: Colors.blue,
-                    child: FlatButton(
-                      onPressed: () {
-                        uploadToFirebase(args.paths).then(
-                          (_) => Navigator.pop(context),
-                        );
-                      },
-                      child: Text(
-                        "POST",
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
+                    child: isUploading
+                        ? Center(child: CircularProgressIndicator())
+                        : FlatButton(
+                            onPressed: () {
+                              setState(() {
+                                isUploading = true;
+                              });
+                              uploadToFirebase(args.paths).then(
+                                (_) => Navigator.pop(context),
+                              );
+                            },
+                            child: Text(
+                              "POST",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ),

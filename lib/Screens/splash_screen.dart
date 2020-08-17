@@ -1,6 +1,6 @@
+import 'package:app/Login-System/signup_methods.dart';
 import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/home_screen.dart';
-import 'package:app/Screens/Login-System/signup_methods.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 

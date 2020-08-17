@@ -1,12 +1,9 @@
-import 'package:app/Provider/login_store.dart';
-import 'package:app/Screens/Login-System/get-details.dart';
+import 'package:app/Login-System/get-details.dart';
 import 'package:app/Screens/home_screen.dart';
-import 'package:app/models/user.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserMaintainer {
@@ -98,5 +95,93 @@ class UserMaintainer {
     prefs.setString("phoneNumber", userData["phoneNumber"]);
     prefs.setString("profile_pic", userData["profile_pic"]);
     prefs.setString("uid", userData["uid"]);
+    prefs.setInt("no_of_posts", int.tryParse(userData["no_of_posts"]));
+  }
+
+  Future<String> getUserId() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String id = prefs.getString("email") != null
+        ? prefs.getString("email")
+        : prefs.getString("phoneNumber");
+    return id;
+  }
+
+  Future<String> getUserName(String id) async {
+    DocumentSnapshot ds =
+        await Firestore.instance.collection("Users").document(id).get();
+    String username = ds["name"];
+    return username;
+  }
+
+  Future<int> countImagePost() async {
+    String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection("Image-Posts")
+                .where("user_id", isEqualTo: userId)
+                .getDocuments())
+            .documents;
+    return documentList.length;
+  }
+
+  Future<int> countTweetPost() async {
+    String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection("Tweet-Posts")
+                .where("user_id", isEqualTo: userId)
+                .getDocuments())
+            .documents;
+    return documentList.length;
+  }
+
+  Future<int> countPollPost() async {
+    String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection("Poll-Posts")
+                .where("user_id", isEqualTo: userId)
+                .getDocuments())
+            .documents;
+    return documentList.length;
+  }
+
+  Future<int> countDocPost() async {
+    String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection("Doc-Posts")
+                .where("user_id", isEqualTo: userId)
+                .getDocuments())
+            .documents;
+    return documentList.length;
+  }
+
+  Future<List<DocumentSnapshot>> getProfilePost(String type) async {
+    String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection(type)
+                .where("user_id", isEqualTo: userId)
+                .getDocuments())
+            .documents;
+    return documentList;
+  }
+
+  Future<List<DocumentSnapshot>> searchTweets(List<String> searchArray) async {
+    // String userId = await getUserId();
+    List<DocumentSnapshot> documentList;
+    documentList =
+        (await Firestore.instance //search for the userid in User node
+                .collection("Image-Posts")
+                .where("tags", arrayContainsAny: searchArray)
+                .getDocuments())
+            .documents;
+    return documentList;
   }
 }
