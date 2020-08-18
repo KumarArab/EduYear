@@ -13,10 +13,11 @@ class _PostPollsState extends State<PostPolls> {
   String question;
   String option1;
   String option2;
+  String option3;
+  String option4;
   bool isAnswered = false;
   String userChoice;
-  int voteForA = 0;
-  int voteForB = 0;
+  int uploaderChoice;
 
   Future<void> postPoll(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -25,6 +26,7 @@ class _PostPollsState extends State<PostPolls> {
         : prefs.getString("phoneNumber");
     int noOfPosts = prefs.getInt("no_of_posts");
     String name = prefs.getString("name");
+    String profilepic = prefs.getString("profile_pic");
 
     DocumentReference documentReference =
         Firestore.instance.collection("Poll-Posts").document("$id-$noOfPosts");
@@ -34,18 +36,27 @@ class _PostPollsState extends State<PostPolls> {
     for (int i = 0; i < tagList.length; i++) {
       tagMap["tag[$i]"] = tagList[i];
     }
+    Map<String, int> optionsMap = Map<String, int>();
+    optionsMap[option1] = uploaderChoice == 1 ? 1 : 0;
+    optionsMap[option2] = uploaderChoice == 2 ? 1 : 0;
+    if (option3 != null) {
+      optionsMap[option3] = uploaderChoice == 3 ? 1 : 0;
+    }
+    if (option4 != null) {
+      optionsMap[option4] = uploaderChoice == 4 ? 1 : 0;
+    }
+
     await documentReference.setData(
       {
         // "images": imagesMap,
         "question": question,
         "tags": tagList,
         "user_id": id,
-        "optionA": option1,
-        "optionB": option2,
-        "voteForA": voteForA.toString(),
-        "voteForB": voteForB.toString(),
+        "avatar": profilepic,
+        "options": optionsMap,
         "postNo": noOfPosts.toString(),
         "name": name,
+        "voters": [id]
       },
     );
     noOfPosts += 1;
@@ -100,9 +111,7 @@ class _PostPollsState extends State<PostPolls> {
                           Text("Option 1:    "),
                           Expanded(
                             child: TextField(onChanged: (value) {
-                              setState(() {
-                                option1 = value;
-                              });
+                              option1 = value;
                             }),
                           ),
                         ],
@@ -112,9 +121,27 @@ class _PostPollsState extends State<PostPolls> {
                           Text("Option 2:    "),
                           Expanded(
                             child: TextField(onChanged: (value) {
-                              setState(() {
-                                option2 = value;
-                              });
+                              option2 = value;
+                            }),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text("Option 3:    "),
+                          Expanded(
+                            child: TextField(onChanged: (value) {
+                              option3 = value;
+                            }),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        children: [
+                          Text("Option 4:    "),
+                          Expanded(
+                            child: TextField(onChanged: (value) {
+                              option4 = value;
                             }),
                           ),
                         ],
@@ -130,17 +157,14 @@ class _PostPollsState extends State<PostPolls> {
                               margin: EdgeInsets.symmetric(horizontal: 10),
                               child: RaisedButton(
                                 onPressed: () {
-                                  setState(() {
-                                    voteForA = 1;
-                                    voteForB = 0;
-
-                                    isAnswered = true;
-                                    userChoice = option1;
-                                  });
+                                  if (option1 != null) {
+                                    uploaderChoice = 1;
+                                    setState(() {
+                                      isAnswered = true;
+                                    });
+                                  }
                                 },
-                                child: option1 != null || option1 == ""
-                                    ? Text(option1)
-                                    : Text("Option 1"),
+                                child: Text("1"),
                               ),
                             ),
                           ),
@@ -149,17 +173,46 @@ class _PostPollsState extends State<PostPolls> {
                               margin: EdgeInsets.symmetric(horizontal: 10),
                               child: RaisedButton(
                                 onPressed: () {
-                                  voteForB = 1;
-                                  voteForA = 0;
-
-                                  setState(() {
-                                    isAnswered = true;
-                                    userChoice = option2;
-                                  });
+                                  if (option2 != null) {
+                                    uploaderChoice = 2;
+                                    setState(() {
+                                      isAnswered = true;
+                                    });
+                                  }
                                 },
-                                child: option2 != null || option2 == ""
-                                    ? Text(option2)
-                                    : Text("Option 1"),
+                                child: Text("2"),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              margin: EdgeInsets.symmetric(horizontal: 10),
+                              child: RaisedButton(
+                                onPressed: () {
+                                  if (option3 != null) {
+                                    uploaderChoice = 3;
+                                    setState(() {
+                                      isAnswered = true;
+                                    });
+                                  }
+                                },
+                                child: Text("3"),
+                              ),
+                            ),
+                          ),
+                          Expanded(
+                            child: Container(
+                              margin: EdgeInsets.symmetric(horizontal: 10),
+                              child: RaisedButton(
+                                onPressed: () {
+                                  if (option4 != null) {
+                                    uploaderChoice = 4;
+                                    setState(() {
+                                      isAnswered = true;
+                                    });
+                                  }
+                                },
+                                child: Text("4"),
                               ),
                             ),
                           ),
@@ -169,7 +222,7 @@ class _PostPollsState extends State<PostPolls> {
                   ),
                 ),
                 isAnswered
-                    ? Text("Your answer recorded: $userChoice")
+                    ? Text("Your answer recorded: option $uploaderChoice")
                     : Container(),
                 Container(
                   padding: EdgeInsets.all(20),

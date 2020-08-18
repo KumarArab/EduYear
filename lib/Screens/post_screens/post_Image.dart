@@ -37,6 +37,7 @@ class _PostImageState extends State<PostImage> {
         : prefs.getString("phoneNumber");
     int noOfPosts = prefs.getInt("no_of_posts");
     String name = prefs.getString("name");
+    String avatar = prefs.getString("profile_pic");
 
     DocumentReference documentReference =
         Firestore.instance.collection("Image-Posts").document("$id-$noOfPosts");
@@ -87,6 +88,7 @@ class _PostImageState extends State<PostImage> {
         "tags": tagList,
         "user_id": id,
         "name": name,
+        "avatar": avatar,
       },
     );
     noOfPosts += 1;

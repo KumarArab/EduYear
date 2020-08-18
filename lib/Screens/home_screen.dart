@@ -8,7 +8,7 @@ import 'package:app/Screens/post_screens/post_document.dart';
 import 'package:app/Screens/post_screens/post_polls.dart';
 import 'package:app/Screens/post_screens/post_tweet.dart';
 import 'package:app/Screens/Search%20Views/search_screen.dart';
-import 'package:app/Screens/user_profile.dart';
+import 'package:app/Screens/Profile/user_profile.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:app/models/image_post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -100,12 +100,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 title: Text("Add new Pdf"),
                 onTap: () => openPdfExplorer(),
               ),
-              ListTile(
-                leading: Icon(Icons.search),
-                title: Text("Search"),
-                onTap: () =>
-                    Navigator.pushNamed(context, SearchScreen.routeName),
-              ),
+              // ListTile(
+              //   leading: Icon(Icons.search),
+              //   title: Text("Search"),
+              //   onTap: () =>
+              //       Navigator.pushNamed(context, SearchScreen.routeName),
+              // ),
               ListTile(
                 leading: Icon(Icons.supervised_user_circle),
                 title: Text("Profile"),
@@ -122,29 +122,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        PageView(
-          controller: _controller,
-          children: [
-            ImageSection(),
-            TweetSection(),
-            PollSection(),
-            DocsSection(),
-          ],
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text(
+          "APPNAME",
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
         ),
-        Positioned(
-          bottom: 20,
-          right: 20,
-          child: FloatingActionButton(
-            backgroundColor: Colors.black,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.search, color: Colors.white),
             onPressed: () {
-              showAlertDailogBox(context);
+              Navigator.pushNamed(context, SearchScreen.routeName);
             },
-            child: Icon(Icons.menu, color: Colors.white),
           ),
-        ),
-      ],
+        ],
+      ),
+      body: Stack(
+        children: [
+          PageView(
+            controller: _controller,
+            children: [
+              ImageSection(
+                all: false,
+              ),
+              TweetSection(
+                all: false,
+              ),
+              PollSection(
+                all: false,
+              ),
+              DocsSection(
+                all: false,
+              ),
+            ],
+          ),
+          Positioned(
+            bottom: 20,
+            right: 20,
+            child: FloatingActionButton(
+              backgroundColor: Colors.white,
+              onPressed: () {
+                showAlertDailogBox(context);
+              },
+              child: Icon(Icons.menu, color: Colors.black),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

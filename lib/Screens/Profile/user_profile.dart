@@ -1,5 +1,5 @@
 import 'package:app/Provider/login_store.dart';
-import 'package:app/Screens/profile_posts.dart';
+import 'package:app/Screens/Profile/profile_posts.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -25,16 +25,19 @@ class _UserProfileState extends State<UserProfile> {
   @override
   void didChangeDependencies() async {
     await fetchUserDetails();
-    int tempImageCount = await userMaintainer.countImagePost();
+    // int tempImageCount = await userMaintainer.countImagePost();
     int tempTweetCount = await userMaintainer.countTweetPost();
     int tempPollCount = await userMaintainer.countPollPost();
     int tempDocCount = await userMaintainer.countDocPost();
-    setState(() {
-      imagePostCount = tempImageCount;
-      tweetPostCount = tempTweetCount;
-      pollPostCount = tempPollCount;
-      docPostCount = tempDocCount;
-    });
+    if (mounted) {
+      setState(() {
+        // imagePostCount = tempImageCount;
+        tweetPostCount = tempTweetCount;
+        pollPostCount = tempPollCount;
+        docPostCount = tempDocCount;
+      });
+    }
+
     super.didChangeDependencies();
   }
 
@@ -54,13 +57,21 @@ class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.pink,
+      backgroundColor: Colors.black,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.pink,
+        backgroundColor: Colors.black,
+        iconTheme: IconThemeData(
+          color: Colors.white, //change your color here
+        ),
         title: isLoading
             ? CircularProgressIndicator()
-            : Text(_userProfile["name"]),
+            : Text(
+                _userProfile["name"],
+                style: TextStyle(
+                  color: Colors.white,
+                ),
+              ),
         actions: [
           IconButton(
             onPressed: () {},
@@ -97,11 +108,11 @@ class _UserProfileState extends State<UserProfile> {
               child: Container(
                 padding: EdgeInsets.only(top: 30),
                 decoration: BoxDecoration(
+                  color: Colors.grey,
                   borderRadius: BorderRadius.only(
                     topLeft: Radius.circular(50),
                     topRight: Radius.circular(50),
                   ),
-                  color: Colors.white,
                 ),
                 child: Column(
                   children: [
@@ -170,7 +181,6 @@ class _UserProfileState extends State<UserProfile> {
                     ),
                     Container(
                       width: MediaQuery.of(context).size.width,
-                      color: Colors.pink,
                       child: FlatButton(
                         onPressed: () {
                           Provider.of<LoginStore>(context, listen: false)
@@ -178,9 +188,9 @@ class _UserProfileState extends State<UserProfile> {
                         },
                         child: Text("SignOut",
                             style: TextStyle(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 20,
-                                color: Colors.white)),
+                              fontWeight: FontWeight.w700,
+                              fontSize: 20,
+                            )),
                       ),
                     ),
                   ],

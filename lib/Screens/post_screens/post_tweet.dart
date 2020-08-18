@@ -14,6 +14,7 @@ class PostTweet extends StatelessWidget {
         : prefs.getString("phoneNumber");
     int noOfPosts = prefs.getInt("no_of_posts");
     String name = prefs.getString("name");
+    String avatar = prefs.getString("profile_pic");
 
     DocumentReference documentReference =
         Firestore.instance.collection("Tweet-Posts").document("$id-$noOfPosts");
@@ -30,6 +31,7 @@ class PostTweet extends StatelessWidget {
         "tags": tagList,
         "user_id": id,
         "name": name,
+        "avatar": avatar,
       },
     );
     noOfPosts += 1;

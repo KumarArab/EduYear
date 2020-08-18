@@ -12,30 +12,29 @@ class SearchImages extends StatefulWidget {
 class _SearchImagesState extends State<SearchImages> {
   @override
   Widget build(BuildContext context) {
-    return Expanded(
-      child: widget.searchedImageList == null
-          ? Center(
-              child: Text('Your searchs will appear here'),
-            )
-          : ListView.builder(
-              itemBuilder: (ctx, i) {
-                Map<String, dynamic> imagesMap = new Map<String, dynamic>();
-                imagesMap = widget.searchedImageList[i]["images"];
-                List<String> mapurls = [];
-                imagesMap != null
-                    ? imagesMap.forEach((key, value) {
-                        mapurls.add(value);
-                      })
-                    : {};
-                return ImageCard(
-                  caption: widget.searchedImageList[i]["caption"],
-                  imageUrl: mapurls,
-                  user_id: widget.searchedImageList[i]["user_id"],
-                  username: widget.searchedImageList[i]["name"],
-                );
-              },
-              itemCount: widget.searchedImageList.length,
-            ),
-    );
+    return widget.searchedImageList == null
+        ? ImageSection(
+            all: true,
+          )
+        : ListView.builder(
+            itemBuilder: (ctx, i) {
+              Map<String, dynamic> imagesMap = new Map<String, dynamic>();
+              imagesMap = widget.searchedImageList[i]["images"];
+              List<String> mapurls = [];
+              imagesMap != null
+                  ? imagesMap.forEach((key, value) {
+                      mapurls.add(value);
+                    })
+                  : {};
+              return ImageCard(
+                avatar: widget.searchedImageList[i]["avatar"],
+                caption: widget.searchedImageList[i]["caption"],
+                imageUrl: mapurls,
+                user_id: widget.searchedImageList[i]["user_id"],
+                username: widget.searchedImageList[i]["name"],
+              );
+            },
+            itemCount: widget.searchedImageList.length,
+          );
   }
 }

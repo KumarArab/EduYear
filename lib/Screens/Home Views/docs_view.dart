@@ -1,20 +1,46 @@
+import 'package:app/Screens/Profile/visit_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class DocsSection extends StatefulWidget {
+  final bool all;
+  DocsSection({this.all});
   @override
   _DocsSectionState createState() => _DocsSectionState();
 }
 
 class _DocsSectionState extends State<DocsSection> {
+  List<String> subscribedList;
+
+  @override
+  void didChangeDependencies() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        subscribedList = prefs.getStringList("subscribed");
+      });
+    }
+    print(subscribedList);
+
+    // await fetchImagePosts();
+
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purple,
+      backgroundColor: Colors.black,
       body: StreamBuilder(
-        stream: Firestore.instance.collection("Doc-Posts").snapshots(),
+        stream: widget.all
+            ? Firestore.instance.collection("Doc-Posts").snapshots()
+            : Firestore.instance
+                .collection("Doc-Posts")
+                .where("user_id", whereIn: subscribedList)
+                .snapshots(),
         builder: (context, snapshot) {
           return !snapshot.hasData
               ? Text('PLease Wait')
@@ -39,6 +65,7 @@ class _DocsSectionState extends State<DocsSection> {
                       filename: products["document_name"],
                       docPath: products["doc_path"],
                       username: products["name"],
+                      avatar: products["avatar"],
                     ));
                     //}
 
@@ -53,37 +80,55 @@ class _DocsSectionState extends State<DocsSection> {
 }
 
 class DocCard extends StatelessWidget {
-  final String user_id, filename, docPath, username;
-  DocCard({this.user_id, this.filename, this.docPath, this.username});
+  final String user_id, filename, docPath, username, avatar;
+  DocCard(
+      {this.user_id, this.filename, this.docPath, this.username, this.avatar});
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(20),
-      width: MediaQuery.of(context).size.width * 0.9,
-      margin: EdgeInsets.all(20),
+      margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(3, 3),
-            spreadRadius: 5,
-          )
-        ],
+        border: Border.all(color: Colors.grey),
       ),
       child: Column(
         children: [
           Container(
             alignment: Alignment.centerLeft,
-            child: Text(
-              username,
-              style: TextStyle(fontWeight: FontWeight.w700),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, VisitProfile.routeName,
+                  arguments: user_id),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: Image.network(avatar)),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    username,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            padding: EdgeInsets.only(bottom: 5),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
           ),
           Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 25,
+              vertical: 10,
+            ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
@@ -95,9 +140,14 @@ class DocCard extends StatelessWidget {
                   ),
                   child: SvgPicture.asset("assets/img/pdf.svg"),
                 ),
-                Text(filename),
+                Text(
+                  filename,
+                  style: TextStyle(
+                    color: Colors.white,
+                  ),
+                ),
                 IconButton(
-                  icon: Icon(Icons.file_download),
+                  icon: Icon(Icons.file_download, color: Colors.white),
                   onPressed: () async {
                     if (await canLaunch(docPath))
                       launch(docPath);

@@ -1,18 +1,44 @@
+import 'package:app/Screens/Profile/visit_profile.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TweetSection extends StatefulWidget {
+  final bool all;
+  TweetSection({this.all});
   @override
   _TweetSectionState createState() => _TweetSectionState();
 }
 
 class _TweetSectionState extends State<TweetSection> {
+  List<String> subscribedList;
+
+  @override
+  void didChangeDependencies() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        subscribedList = prefs.getStringList("subscribed");
+      });
+    }
+    print(subscribedList);
+
+    // await fetchImagePosts();
+
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.purple,
+      backgroundColor: Colors.black,
       body: StreamBuilder(
-        stream: Firestore.instance.collection("Tweet-Posts").snapshots(),
+        stream: widget.all
+            ? Firestore.instance.collection("Tweet-Posts").snapshots()
+            : Firestore.instance
+                .collection("Tweet-Posts")
+                .where("user_id", whereIn: subscribedList)
+                .snapshots(),
         builder: (context, snapshot) {
           return !snapshot.hasData
               ? Text('PLease Wait')
@@ -36,6 +62,7 @@ class _TweetSectionState extends State<TweetSection> {
                       user_id: products["user_id"],
                       tweet: products["tweet"],
                       username: products["name"],
+                      avatar: products["avatar"],
                     ));
                     //}
 
@@ -50,40 +77,59 @@ class _TweetSectionState extends State<TweetSection> {
 }
 
 class TweetCard extends StatelessWidget {
-  final String user_id, tweet, username;
-  TweetCard({this.user_id, this.tweet, this.username});
+  final String user_id, tweet, username, avatar;
+  TweetCard({this.user_id, this.tweet, this.username, this.avatar});
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(20),
-      width: MediaQuery.of(context).size.width * 0.9,
-      margin: EdgeInsets.all(20),
+      margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(3, 3),
-            spreadRadius: 5,
-          )
-        ],
+        border: Border.all(color: Colors.grey),
       ),
       child: Column(
         children: [
           Container(
             alignment: Alignment.centerLeft,
-            child: Text(
-              username,
-              style: TextStyle(fontWeight: FontWeight.w700),
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, VisitProfile.routeName,
+                  arguments: user_id),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(100),
+                      child: Image.network(avatar),
+                    ),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    username,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
-            padding: EdgeInsets.only(bottom: 5),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
           ),
           Divider(),
           Container(
             alignment: Alignment.centerLeft,
-            child: Text(tweet),
+            child: Text(tweet,
+                style: TextStyle(
+                  color: Colors.white,
+                  letterSpacing: 1,
+                  height: 2,
+                )),
           ),
         ],
       ),

@@ -17,9 +17,12 @@ class _ProfilePostState extends State<ProfilePost> {
   void didChangeDependencies() async {
     List<DocumentSnapshot> temp =
         await userMaintainer.getProfilePost(widget.type);
-    setState(() {
-      documentList = temp;
-    });
+    if (mounted) {
+      setState(() {
+        documentList = temp;
+      });
+    }
+
     super.didChangeDependencies();
   }
 

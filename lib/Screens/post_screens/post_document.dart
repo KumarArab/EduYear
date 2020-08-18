@@ -37,6 +37,8 @@ class _PostDocumentState extends State<PostDocument> {
     String id = prefs.getString("email") != null
         ? prefs.getString("email")
         : prefs.getString("phoneNumber");
+    String avatar = prefs.getString("profile_pic");
+
     int noOfPosts = prefs.getInt("no_of_posts");
     String name = prefs.getString("name");
     DocumentReference documentReference =
@@ -52,7 +54,8 @@ class _PostDocumentState extends State<PostDocument> {
       print(downloadUrl);
       await documentReference.setData({
         "doc_path": downloadUrl,
-      }).then((_) => Navigator.of(context).pop());
+        "avatar": avatar,
+      });
     } else {
       print('Error from image repo ${snapshot.error.toString()}');
       throw ('This file is not an image');
@@ -77,6 +80,7 @@ class _PostDocumentState extends State<PostDocument> {
         .document(id)
         .updateData({"no_of_posts": noOfPosts.toString()});
     await prefs.setInt("no_of_posts", noOfPosts);
+    Navigator.of(context).pop();
   }
 
   @override

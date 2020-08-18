@@ -18,76 +18,157 @@ class _SearchScreenState extends State<SearchScreen> {
     initialPage: 0,
   );
   String searchString;
+  int currentPageId = 0;
   UserMaintainer userMaintainer = UserMaintainer();
   List<DocumentSnapshot> searchedImageSnapShot;
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        iconTheme: IconThemeData(
+          color: Colors.white, //change your color here
+        ),
+        title: Container(
+          child: TextField(
+            autofocus: true,
+            cursorColor: Colors.white,
+            textInputAction: TextInputAction.search,
+            style: TextStyle(color: Colors.white),
+            decoration: InputDecoration(
+              hintText: "Search Related Tags",
+              hintStyle: TextStyle(color: Colors.grey),
+              border: OutlineInputBorder(borderSide: BorderSide.none),
+            ),
+            onChanged: (value) {
+              searchString = value;
+            },
+            onSubmitted: (value) async {
+              List<DocumentSnapshot> temp =
+                  await userMaintainer.searchTweets(value.split(" "));
+              print("recieved results");
+              setState(() {
+                searchedImageSnapShot = temp;
+              });
+            },
+          ),
+        ),
+      ),
       body: SafeArea(
           child: Column(
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  onChanged: (value) {
-                    searchString = value;
+          Container(
+            width: MediaQuery.of(context).size.width,
+            margin: EdgeInsets.symmetric(vertical: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                FlatButton(
+                  onPressed: () {
+                    _controller.jumpToPage(0);
                   },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color:
+                          currentPageId == 0 ? Colors.teal : Colors.transparent,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Images",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              RaisedButton(
-                onPressed: () async {
-                  List<DocumentSnapshot> temp = await userMaintainer
-                      .searchTweets(searchString.split(" "));
-                  print("recieved results");
-                  setState(() {
-                    searchedImageSnapShot = temp;
-                  });
-                },
-                child: Text("Search"),
-              )
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              FlatButton(
-                onPressed: () {
-                  _controller.jumpToPage(0);
-                },
-                child: Text("Images"),
-              ),
-              FlatButton(
-                onPressed: () {
-                  _controller.jumpToPage(1);
-                },
-                child: Text("Tweets"),
-              ),
-              FlatButton(
-                onPressed: () {
-                  _controller.jumpToPage(2);
-                },
-                child: Text("Polls"),
-              ),
-              FlatButton(
-                onPressed: () {
-                  _controller.jumpToPage(3);
-                },
-                child: Text("Documents"),
-              ),
-            ],
+                FlatButton(
+                  onPressed: () {
+                    _controller.jumpToPage(1);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color:
+                          currentPageId == 1 ? Colors.teal : Colors.transparent,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Tweets",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                FlatButton(
+                  onPressed: () {
+                    _controller.jumpToPage(2);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color:
+                          currentPageId == 2 ? Colors.teal : Colors.transparent,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Polls",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+                FlatButton(
+                  onPressed: () {
+                    _controller.jumpToPage(3);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color:
+                          currentPageId == 3 ? Colors.teal : Colors.transparent,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Docs",
+                      style: TextStyle(
+                        color: Colors.white,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           Expanded(
-            child: PageView(
-              controller: _controller,
-              children: [
-                SearchImages(
-                  searchedImageList: searchedImageSnapShot,
-                ),
-                TweetSection(),
-                PollSection(),
-                DocsSection(),
-              ],
+            child: Container(
+              color: Colors.black,
+              width: MediaQuery.of(context).size.width,
+              child: PageView(
+                controller: _controller,
+                onPageChanged: (value) {
+                  setState(() {
+                    currentPageId = value;
+                  });
+                },
+                children: [
+                  SearchImages(
+                    searchedImageList: searchedImageSnapShot,
+                  ),
+                  TweetSection(
+                    all: true,
+                  ),
+                  PollSection(
+                    all: true,
+                  ),
+                  DocsSection(
+                    all: true,
+                  ),
+                ],
+              ),
             ),
           )
         ],

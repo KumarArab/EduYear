@@ -1,18 +1,48 @@
+import 'package:app/Screens/Profile/visit_profile.dart';
+import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class PollSection extends StatefulWidget {
+  final bool all;
+  PollSection({this.all});
   @override
   _PollSectionState createState() => _PollSectionState();
 }
 
 class _PollSectionState extends State<PollSection> {
+  List<String> subscribedList;
+  String currentUserId;
+  UserMaintainer userMaintainer = UserMaintainer();
+
+  @override
+  void didChangeDependencies() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    currentUserId = await userMaintainer.getUserId();
+    if (mounted) {
+      setState(() {
+        subscribedList = prefs.getStringList("subscribed");
+      });
+    }
+    print(subscribedList);
+
+    // await fetchImagePosts();
+
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.orange,
+      backgroundColor: Colors.black,
       body: StreamBuilder(
-        stream: Firestore.instance.collection("Poll-Posts").snapshots(),
+        stream: widget.all
+            ? Firestore.instance.collection("Poll-Posts").snapshots()
+            : Firestore.instance
+                .collection("Poll-Posts")
+                .where("user_id", whereIn: subscribedList)
+                .snapshots(),
         builder: (context, snapshot) {
           return !snapshot.hasData
               ? Text('PLease Wait')
@@ -21,7 +51,14 @@ class _PollSectionState extends State<PollSection> {
                   itemBuilder: (context, index) {
                     DocumentSnapshot products = snapshot.data
                         .documents[snapshot.data.documents.length - 1 - index];
-                    // Map<String, dynamic> imagesMap = new Map<String, dynamic>();
+                    List<dynamic> voters = products["voters"];
+                    bool isAlreadyVoted = false;
+                    if (voters.contains(currentUserId)) {
+                      isAlreadyVoted = true;
+                    }
+
+                    // Map<String, dynamic> optionsMap =
+                    //     new Map<String, dynamic>();
                     // imagesMap = products["images"];
                     // List<String> mapurls = [];
                     // imagesMap != null
@@ -33,13 +70,12 @@ class _PollSectionState extends State<PollSection> {
                     // if (mapurls.length == 1) {
                     return (PollCard(
                       question: products["question"],
-                      voteForA: products["voteForA"],
-                      voteForB: products["voteForB"],
-                      optionA: products["optionA"],
-                      optionB: products["optionB"],
                       userId: products["user_id"],
-                      postNo: products["postNo"],
                       username: products["name"],
+                      avatar: products["avatar"],
+                      optionsMap: products["options"],
+                      postNo: products["postNo"],
+                      isAlreadyVoted: isAlreadyVoted,
                     ));
                     //}
 
@@ -54,162 +90,216 @@ class _PollSectionState extends State<PollSection> {
 }
 
 class PollCard extends StatefulWidget {
-  final String question,
-      voteForB,
-      voteForA,
-      optionA,
-      optionB,
-      userId,
-      postNo,
-      username;
+  final String question, userId, postNo, username, avatar;
+  bool isAlreadyVoted;
+
+  Map<dynamic, dynamic> optionsMap;
   PollCard({
     this.question,
-    this.voteForB,
-    this.voteForA,
-    this.optionA,
-    this.optionB,
     this.userId,
     this.postNo,
     this.username,
+    this.avatar,
+    this.optionsMap,
+    this.isAlreadyVoted,
   });
   @override
   _PollCardState createState() => _PollCardState();
 }
 
 class _PollCardState extends State<PollCard> {
-  double calculateWidth() {
-    int voteA = int.tryParse(widget.voteForA);
-    int voteB = int.tryParse(widget.voteForB);
-    double width = voteA / (voteA + voteB);
-    return width;
+  UserMaintainer userMaintainer = UserMaintainer();
+  String currentUserId;
+
+  List<String> options;
+  List<int> votes;
+  int totalVotes;
+
+  @override
+  void initState() {
+    createOptionsList();
+    countOptions();
+    super.initState();
   }
 
-  Future<void> updateOptionA(String id, String postNo) async {
-    int voteA = int.tryParse(widget.voteForA);
-    String updatedVote = (voteA + 1).toString();
-
-    DocumentReference documentReference =
-        Firestore.instance.collection("Poll-Posts").document("$id-$postNo");
-    documentReference.updateData({"voteForA": updatedVote});
+  void createOptionsList() {
+    options = [];
+    votes = [];
+    widget.optionsMap.forEach((key, value) {
+      print("$key: $value");
+      options.add(key);
+      votes.add(value);
+    });
   }
 
-  Future<void> updateOptionB(String id, String postNo) async {
-    int voteB = int.tryParse(widget.voteForB);
-    String updatedVote = (voteB + 1).toString();
+  void countOptions() {
+    totalVotes = 0;
+    widget.optionsMap.forEach((key, value) {
+      totalVotes += value;
+    });
+  }
 
-    DocumentReference documentReference =
-        Firestore.instance.collection("Poll-Posts").document("$id-$postNo");
-    documentReference.updateData({"voteForB": updatedVote});
+  double calculateVote(int index) {
+    return votes[index] / totalVotes;
+  }
+
+  Future<void> registerVote(int index) async {
+    Map<String, dynamic> newOptionMap = widget.optionsMap;
+    newOptionMap[options[index]] = votes[index] + 1;
+    DocumentReference documentReference = Firestore.instance
+        .collection("Poll-Posts")
+        .document("${widget.userId}-${widget.postNo}");
+    await documentReference.updateData({"options": newOptionMap});
+    currentUserId = await userMaintainer.getUserId();
+    await documentReference.updateData({
+      "voters": FieldValue.arrayUnion([currentUserId])
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: EdgeInsets.all(20),
-      width: MediaQuery.of(context).size.width * 0.9,
-      margin: EdgeInsets.all(20),
+      margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        boxShadow: <BoxShadow>[
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: Offset(3, 3),
-            spreadRadius: 5,
-          )
-        ],
+        border: Border.all(color: Colors.grey),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
           Container(
             alignment: Alignment.centerLeft,
+            child: GestureDetector(
+              onTap: () => Navigator.pushNamed(context, VisitProfile.routeName,
+                  arguments: widget.userId),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    child: ClipRRect(
+                        borderRadius: BorderRadius.circular(100),
+                        child: Image.network(widget.avatar)),
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Text(
+                    widget.username,
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: 20,
+              vertical: 10,
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.symmetric(
+              vertical: 10,
+            ),
+            alignment: Alignment.centerLeft,
             child: Text(
-              widget.username,
-              style: TextStyle(fontWeight: FontWeight.w700),
-            ),
-            padding: EdgeInsets.only(bottom: 5),
-          ),
-          Container(
-            child: Center(
-              child: Text(widget.question),
+              widget.question,
+              style: TextStyle(
+                color: Colors.white,
+              ),
             ),
           ),
           Container(
-            padding: EdgeInsets.all(5),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(widget.optionA),
-                    Text(widget.optionB),
-                  ],
-                ),
-                Container(
+            padding: EdgeInsets.symmetric(vertical: 5),
+            height: votes.length * 32.0,
+            child: ListView.builder(
+              itemBuilder: (ctx, i) {
+                return Container(
                   height: 20,
                   width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(100),
-                    color: Colors.red,
+                  margin: EdgeInsets.symmetric(vertical: 5),
+                  child: Stack(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FractionallySizedBox(
+                              alignment: Alignment.centerLeft,
+                              widthFactor: calculateVote(i),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.teal,
+                                  borderRadius: BorderRadius.only(
+                                    topRight: Radius.circular(5),
+                                    bottomRight: Radius.circular(5),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child: Text(
+                              "${(calculateVote(i) * 100).round()}%",
+                              style: TextStyle(
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        "  ${options[i]}",
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: FractionallySizedBox(
-                    alignment: Alignment.centerLeft,
-                    widthFactor: calculateWidth(),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(100),
-                        color: Colors.green,
+                );
+              },
+              itemCount: votes.length,
+            ),
+          ),
+          widget.isAlreadyVoted
+              ? Container(
+                  child: Center(
+                    child: Text(
+                      "Voted",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),
                 )
-              ],
-            ),
-          ),
-          Container(
-            child: Row(
-              children: [
-                Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
-                    child: RaisedButton(
-                      onPressed: () {
-                        // setState(() {
-                        //   voteForA = 1;
-                        //   voteForB = 0;
-
-                        //   isAnswered = true;
-                        //   userChoice = option1;
-                        // });
-
-                        updateOptionA(widget.userId, widget.postNo);
-                      },
-                      child: Text(widget.optionA),
-                    ),
+              : Container(
+                  width: MediaQuery.of(context).size.width - 30,
+                  margin: EdgeInsets.only(top: 10),
+                  height: 50,
+                  child: ListView.builder(
+                    itemCount: votes.length,
+                    itemBuilder: (context, index) {
+                      return Container(
+                        margin: EdgeInsets.only(right: 5),
+                        decoration: BoxDecoration(
+                          color: Color(0xffdddddd),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: FlatButton(
+                          onPressed: () {
+                            registerVote(index)
+                                .then((_) => createOptionsList());
+                          },
+                          child: Text(
+                            options[index],
+                          ),
+                        ),
+                      );
+                    },
+                    scrollDirection: Axis.horizontal,
                   ),
-                ),
-                Expanded(
-                  child: Container(
-                    margin: EdgeInsets.symmetric(horizontal: 10),
-                    child: RaisedButton(
-                      onPressed: () {
-                        // voteForB = 1;
-                        // voteForA = 0;
-
-                        // setState(() {
-                        //   isAnswered = true;
-                        //   userChoice = option2;
-                        // });
-                        updateOptionB(widget.userId, widget.postNo);
-                      },
-                      child: Text(widget.optionB),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+                )
         ],
       ),
     );

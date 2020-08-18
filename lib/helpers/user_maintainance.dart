@@ -96,6 +96,14 @@ class UserMaintainer {
     prefs.setString("profile_pic", userData["profile_pic"]);
     prefs.setString("uid", userData["uid"]);
     prefs.setInt("no_of_posts", int.tryParse(userData["no_of_posts"]));
+    // List<dynamic> tempsubscribedList = userData["subscribed"];
+    List<String> subscribedList = [
+      userData["email"] != null ? userData["email"] : userData["phoneNumber"]
+    ];
+    // for (int i = 0; i < tempsubscribedList.length; i++) {
+    //   subscribedList.add(tempsubscribedList[i].toString());
+    // }
+    prefs.setStringList("subscribed", subscribedList);
   }
 
   Future<String> getUserId() async {
@@ -113,12 +121,11 @@ class UserMaintainer {
     return username;
   }
 
-  Future<int> countImagePost() async {
-    String userId = await getUserId();
+  Future<int> countPost(String userId, String postTpe) async {
     List<DocumentSnapshot> documentList;
     documentList =
         (await Firestore.instance //search for the userid in User node
-                .collection("Image-Posts")
+                .collection(postTpe)
                 .where("user_id", isEqualTo: userId)
                 .getDocuments())
             .documents;
@@ -183,5 +190,33 @@ class UserMaintainer {
                 .getDocuments())
             .documents;
     return documentList;
+  }
+
+  Future<void> subscribe(String visitorId) async {
+    String userId = await getUserId();
+    await Firestore.instance.collection("Users").document(userId).updateData({
+      "subscribed": FieldValue.arrayUnion([visitorId])
+    });
+  }
+
+  Future<void> unsubscribe(String visitorId) async {
+    String userId = await getUserId();
+    await Firestore.instance.collection("Users").document(userId).updateData({
+      "subscribed": FieldValue.arrayRemove([visitorId])
+    });
+  }
+
+  Future<void> addSubscriberLocally(String args) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> subscribedList = prefs.getStringList("subscribed");
+    subscribedList.add(args);
+    prefs.setStringList("subscribed", subscribedList);
+  }
+
+  Future<void> removeSubscriberLocally(String args) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> subscribedList = prefs.getStringList("subscribed");
+    subscribedList.remove(args);
+    prefs.setStringList("subscribed", subscribedList);
   }
 }

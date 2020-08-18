@@ -42,10 +42,16 @@ class _GetDetailsState extends State<GetDetails> {
 
     if (user.email != null) {
       await collectionReference.document("${user.email}").setData(userProfile);
+      await collectionReference.document("${user.email}").updateData({
+        "subscribed": [user.email]
+      });
     } else {
       await collectionReference
           .document("${user.phoneNumber}")
           .setData(userProfile);
+      await collectionReference.document("${user.phoneNumber}").updateData({
+        "subscribed": [user.phoneNumber]
+      });
     }
     await userMaintainer.saveUserDataToLocal(userProfile);
     Navigator.of(context).pushAndRemoveUntil(
