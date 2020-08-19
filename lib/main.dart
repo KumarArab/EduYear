@@ -1,12 +1,14 @@
 import 'package:app/Login-System/get-details.dart';
 import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/Profile/visit_profile.dart';
+import 'package:app/Screens/banners.dart';
 import 'package:app/Screens/home_screen.dart';
 import 'package:app/Screens/post_screens/post_Image.dart';
 import 'package:app/Screens/post_screens/post_document.dart';
 import 'package:app/Screens/post_screens/post_polls.dart';
 import 'package:app/Screens/post_screens/post_tweet.dart';
 import 'package:app/Screens/Search%20Views/search_screen.dart';
+import 'package:app/Screens/shared-post.dart';
 import 'package:app/Screens/splash_screen.dart';
 import 'package:app/Screens/Profile/user_profile.dart';
 import 'package:flutter/material.dart';
@@ -44,6 +46,8 @@ class _AppState extends State<App> {
           PostDocument.routeName: (BuildContext context) => PostDocument(),
           SearchScreen.routeName: (BuildContext context) => SearchScreen(),
           VisitProfile.routeName: (BuildContext context) => VisitProfile(),
+          SharedPost.routeName: (BuildContext context) => SharedPost(),
+          Banners.routeName: (BuildContext context) => Banners(),
         },
       ),
     );

@@ -3,6 +3,7 @@ import 'package:app/Screens/Home%20Views/image_view.dart';
 import 'package:app/Screens/Home%20Views/poll_view.dart';
 import 'package:app/Screens/Home%20Views/tweet_view.dart';
 import 'package:app/Screens/Search%20Views/search_image.dart';
+import 'package:app/helpers/common_widgets.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -24,18 +25,12 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        iconTheme: IconThemeData(
-          color: Colors.white, //change your color here
-        ),
+        backgroundColor: Colors.white,
         title: Container(
           child: TextField(
-            autofocus: true,
-            cursorColor: Colors.white,
             textInputAction: TextInputAction.search,
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(color: Colors.black),
             decoration: InputDecoration(
               hintText: "Search Related Tags",
               hintStyle: TextStyle(color: Colors.grey),
@@ -54,6 +49,9 @@ class _SearchScreenState extends State<SearchScreen> {
             },
           ),
         ),
+      ),
+      bottomNavigationBar: Manual(
+        screen: "search",
       ),
       body: SafeArea(
           child: Column(
@@ -78,7 +76,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Text(
                       "Images",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -97,7 +95,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Text(
                       "Tweets",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -116,7 +114,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Text(
                       "Polls",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -135,7 +133,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: Text(
                       "Docs",
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ),
@@ -145,7 +143,6 @@ class _SearchScreenState extends State<SearchScreen> {
           ),
           Expanded(
             child: Container(
-              color: Colors.black,
               width: MediaQuery.of(context).size.width,
               child: PageView(
                 controller: _controller,

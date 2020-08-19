@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/Profile/visit_profile.dart';
 import 'package:app/Screens/post_screens/post_Image.dart';
+import 'package:app/helpers/handle_dynamicLinks.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:file_picker/file_picker.dart';
@@ -12,6 +13,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_swiper/flutter_swiper.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share/share.dart';
 
 class ImageSection extends StatefulWidget {
   final bool all;
@@ -26,12 +28,15 @@ class _ImageSectionState extends State<ImageSection> {
   // FileType _pickType;
   GlobalKey<ScaffoldState> _imagepickScaffold = GlobalKey();
   UserMaintainer userMaintainer = UserMaintainer();
+  String currentUserId;
+
   // List<DocumentSnapshot> dsList;
   List<String> subscribedList;
 
   @override
   void didChangeDependencies() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    currentUserId = await userMaintainer.getUserId();
     if (mounted) {
       setState(() {
         subscribedList = prefs.getStringList("subscribed");
@@ -88,10 +93,13 @@ class _ImageSectionState extends State<ImageSection> {
                                 mapurls.add(value);
                               })
                             : {};
-                        if (products["user_id"] == "+917549152303") {
-                          print(
-                              "Why the hell-----------------------------------");
+                        List<dynamic> likes = products["likes"];
+
+                        bool isAlreadyLiked = false;
+                        if (likes.contains(currentUserId)) {
+                          isAlreadyLiked = true;
                         }
+
                         // if (subscribedList.contains(products["user_id"])) {
                         //   print("subscribed: ${products["user_id"]}");
                         return (ImageCard(
@@ -100,6 +108,10 @@ class _ImageSectionState extends State<ImageSection> {
                           user_id: products["user_id"],
                           username: products["name"],
                           avatar: products["avatar"],
+                          postNo: products["postNo"],
+                          likes_count: products["likes_count"],
+                          isAlreadyLiked: isAlreadyLiked,
+                          comments: products["Comments"],
                         ));
                         // } else {
                         //   print("not subscribed: ${products["user_id"]}");
@@ -114,22 +126,90 @@ class _ImageSectionState extends State<ImageSection> {
   }
 }
 
-class ImageCard extends StatelessWidget {
+class ImageCard extends StatefulWidget {
   final List<String> imageUrl;
   final String caption;
   final String user_id;
   final String username;
   final String avatar;
+  final String postNo;
+  final int likes_count;
+  final bool isAlreadyLiked;
+  Map<String, dynamic> comments = Map<String, String>();
   ImageCard({
     this.imageUrl,
     this.caption,
     this.user_id,
     this.username,
     this.avatar,
+    this.postNo,
+    this.likes_count,
+    this.isAlreadyLiked,
+    this.comments,
   });
+
+  @override
+  _ImageCardState createState() => _ImageCardState();
+}
+
+class _ImageCardState extends State<ImageCard> {
+  DynamicLinksService dynamicLinksService = DynamicLinksService();
+  bool isAlreadyLiked;
+  bool showComments = false;
+  TextEditingController commentController = TextEditingController();
+  UserMaintainer userMaintainer = UserMaintainer();
+
+  Future<void> likethePost() async {
+    String currentUserId = await userMaintainer.getUserId();
+    if (widget.isAlreadyLiked) {
+      await Firestore.instance
+          .collection("Image-Posts")
+          .document("${widget.user_id}-${widget.postNo}")
+          .updateData({
+        "likes_count": widget.likes_count - 1,
+        "likes": FieldValue.arrayRemove([currentUserId])
+      });
+    } else {
+      await Firestore.instance
+          .collection("Image-Posts")
+          .document("${widget.user_id}-${widget.postNo}")
+          .updateData({
+        "likes_count": widget.likes_count + 1,
+        "likes": FieldValue.arrayUnion([currentUserId])
+      });
+    }
+  }
+
+  Future<void> addComment(String comment) async {
+    widget.comments[widget.username] = comment;
+    await Firestore.instance
+        .collection("Image-Posts")
+        .document("${widget.user_id}-${widget.postNo}")
+        .updateData({"Comments": widget.comments});
+  }
+
+  @override
+  void initState() {
+    if (widget.comments != null) {
+      createCommentList();
+    }
+    super.initState();
+  }
+
+  List<String> commenter;
+  List<String> comment;
+  createCommentList() {
+    commenter = [];
+    comment = [];
+    widget.comments.forEach((key, value) {
+      commenter.add(key);
+      comment.add(value);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (imageUrl.length == 1) {
+    if (widget.imageUrl.length == 1) {
       return Container(
         margin: EdgeInsets.only(bottom: 20),
         width: MediaQuery.of(context).size.width * 0.9,
@@ -140,22 +220,22 @@ class ImageCard extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.pushNamed(
                     context, VisitProfile.routeName,
-                    arguments: user_id),
+                    arguments: widget.user_id),
                 child: Row(
                   children: [
                     CircleAvatar(
                       child: ClipRRect(
                           borderRadius: BorderRadius.circular(100),
-                          child: Image.network(avatar)),
+                          child: Image.network(widget.avatar)),
                     ),
                     SizedBox(
                       width: 10,
                     ),
                     Text(
-                      username,
+                      widget.username,
                       style: TextStyle(
                         fontSize: 20,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ],
@@ -169,9 +249,9 @@ class ImageCard extends StatelessWidget {
             Container(
               height: MediaQuery.of(context).size.width,
               width: MediaQuery.of(context).size.width,
-              color: Colors.black,
+              color: Colors.white,
               child: Image.network(
-                imageUrl[0],
+                widget.imageUrl[0],
                 fit: BoxFit.cover,
               ),
             ),
@@ -182,9 +262,9 @@ class ImageCard extends StatelessWidget {
                 vertical: 10,
               ),
               child: Text(
-                caption,
+                widget.caption,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
               ),
             ),
@@ -195,6 +275,7 @@ class ImageCard extends StatelessWidget {
       return Container(
         margin: EdgeInsets.only(bottom: 20),
         width: MediaQuery.of(context).size.width * 0.9,
+        decoration: BoxDecoration(),
         child: Column(
           children: [
             Container(
@@ -202,22 +283,22 @@ class ImageCard extends StatelessWidget {
               child: GestureDetector(
                 onTap: () => Navigator.pushNamed(
                     context, VisitProfile.routeName,
-                    arguments: user_id),
+                    arguments: widget.user_id),
                 child: Row(
                   children: [
                     CircleAvatar(
                       child: ClipRRect(
                           borderRadius: BorderRadius.circular(100),
-                          child: Image.network(avatar)),
+                          child: Image.network(widget.avatar)),
                     ),
                     SizedBox(
                       width: 10,
                     ),
                     Text(
-                      username,
+                      widget.username,
                       style: TextStyle(
                         fontSize: 20,
-                        color: Colors.white,
+                        color: Colors.black,
                       ),
                     ),
                   ],
@@ -234,11 +315,11 @@ class ImageCard extends StatelessWidget {
               child: Swiper(
                 itemBuilder: (BuildContext context, int idx) {
                   return Image.network(
-                    imageUrl[idx],
+                    widget.imageUrl[idx],
                     fit: BoxFit.cover,
                   );
                 },
-                itemCount: imageUrl.length,
+                itemCount: widget.imageUrl.length,
                 scrollDirection: Axis.horizontal,
                 pagination: SwiperPagination(),
               ),
@@ -250,10 +331,109 @@ class ImageCard extends StatelessWidget {
                 vertical: 10,
               ),
               child: Text(
-                caption,
+                widget.caption,
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
+              ),
+            ),
+            Divider(),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  FlatButton.icon(
+                    label: Text(widget.likes_count.toString()),
+                    icon: Icon(
+                      widget.isAlreadyLiked
+                          ? Icons.favorite
+                          : Icons.favorite_border,
+                      color: widget.isAlreadyLiked ? Colors.red : Colors.black,
+                    ),
+                    onPressed: () {
+                      likethePost();
+                    },
+                  ),
+                  IconButton(
+                    iconSize: 25,
+                    color: Colors.black,
+                    icon: Icon(Icons.comment),
+                    onPressed: () {
+                      setState(() {
+                        showComments = !showComments;
+                      });
+                    },
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  IconButton(
+                    iconSize: 25,
+                    color: Colors.black,
+                    icon: Icon(Icons.share),
+                    onPressed: () async {
+                      Map<String, String> postInfo = Map<String, String>();
+                      postInfo["post_type"] = "Image-Posts";
+                      postInfo["post_id"] =
+                          "${widget.user_id}-${widget.postNo}";
+                      String link =
+                          await dynamicLinksService.createDynamicLink(postInfo);
+                      Share.share(link,
+                          subject:
+                              "Hey Look, I found this interesting post on My App");
+                    },
+                  ),
+                ],
+              ),
+            ),
+            showComments
+                ? (widget.comments != null
+                    ? ListView.builder(
+                        shrinkWrap: true,
+                        itemBuilder: (ctx, i) {
+                          return Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 20,
+                              ),
+                              child: RichText(
+                                text: TextSpan(children: [
+                                  TextSpan(
+                                    text: "${commenter[i]}:  ",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  TextSpan(
+                                    text: "${comment[i]}",
+                                    style: TextStyle(
+                                      fontSize: 15,
+                                      color: Colors.black.withOpacity(0.6),
+                                    ),
+                                  ),
+                                ]),
+                              ));
+                        },
+                        itemCount: commenter.length,
+                      )
+                    : Container(
+                        alignment: Alignment.center,
+                        child: Text("No Commnets yet"),
+                      ))
+                : Container(),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20.0),
+              child: TextField(
+                controller: commentController,
+                decoration: InputDecoration(hintText: "Enter your comment"),
+                onSubmitted: (value) {
+                  addComment(value).then((_) {
+                    commentController.clear();
+                    createCommentList();
+                  });
+                },
               ),
             ),
           ],
@@ -262,23 +442,3 @@ class ImageCard extends StatelessWidget {
     }
   }
 }
-
-//ListView.builder(
-//         itemBuilder: (ctx, i) {
-//           Map<String, dynamic> imagesMap = new Map<String, dynamic>();
-//           imagesMap = dsList[i]["images"];
-//           List<String> mapurls = [];
-//           imagesMap != null
-//               ? imagesMap.forEach((key, value) {
-//                   mapurls.add(value);
-//                 })
-//               : {};
-//           return ImageCard(
-//             caption: dsList[i]["caption"],
-//             imageUrl: mapurls,
-//             user_id: dsList[i]["user_id"],
-//             username: dsList[i]["name"],
-//           );
-//         },
-//         itemCount: dsList.length,
-//       )

@@ -35,7 +35,6 @@ class _PollSectionState extends State<PollSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: StreamBuilder(
         stream: widget.all
             ? Firestore.instance.collection("Poll-Posts").snapshots()
@@ -162,7 +161,7 @@ class _PollCardState extends State<PollCard> {
       padding: EdgeInsets.all(20),
       margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: Colors.black),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
@@ -186,7 +185,6 @@ class _PollCardState extends State<PollCard> {
                     widget.username,
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -204,9 +202,6 @@ class _PollCardState extends State<PollCard> {
             alignment: Alignment.centerLeft,
             child: Text(
               widget.question,
-              style: TextStyle(
-                color: Colors.white,
-              ),
             ),
           ),
           Container(
@@ -241,18 +236,14 @@ class _PollCardState extends State<PollCard> {
                             padding: const EdgeInsets.only(left: 8.0),
                             child: Text(
                               "${(calculateVote(i) * 100).round()}%",
-                              style: TextStyle(
-                                color: Colors.white,
-                              ),
+                              style: TextStyle(),
                             ),
                           ),
                         ],
                       ),
                       Text(
                         "  ${options[i]}",
-                        style: TextStyle(
-                          color: Colors.white,
-                        ),
+                        style: TextStyle(),
                       ),
                     ],
                   ),
@@ -267,7 +258,6 @@ class _PollCardState extends State<PollCard> {
                     child: Text(
                       "Voted",
                       style: TextStyle(
-                        color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
                     ),

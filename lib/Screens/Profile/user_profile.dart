@@ -1,5 +1,6 @@
 import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/Profile/profile_posts.dart';
+import 'package:app/helpers/common_widgets.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -20,12 +21,14 @@ class _UserProfileState extends State<UserProfile> {
   int imagePostCount = 0,
       tweetPostCount = 0,
       pollPostCount = 0,
-      docPostCount = 0;
+      docPostCount = 0,
+      subscribedCount = 0;
 
   @override
   void didChangeDependencies() async {
     await fetchUserDetails();
     // int tempImageCount = await userMaintainer.countImagePost();
+
     int tempTweetCount = await userMaintainer.countTweetPost();
     int tempPollCount = await userMaintainer.countPollPost();
     int tempDocCount = await userMaintainer.countDocPost();
@@ -49,6 +52,7 @@ class _UserProfileState extends State<UserProfile> {
     _userProfile["uid"] = prefs.getString("uid");
     _userProfile["name"] = prefs.getString("name");
     _userProfile["imageUrl"] = prefs.getString("profile_pic");
+    subscribedCount = prefs.getStringList("subscribed").length;
     setState(() {
       isLoading = false;
     });
@@ -57,19 +61,15 @@ class _UserProfileState extends State<UserProfile> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.black,
-        iconTheme: IconThemeData(
-          color: Colors.white, //change your color here
-        ),
+        backgroundColor: Colors.white,
         title: isLoading
             ? CircularProgressIndicator()
             : Text(
                 _userProfile["name"],
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Colors.black,
                 ),
               ),
         actions: [
@@ -81,6 +81,7 @@ class _UserProfileState extends State<UserProfile> {
           )
         ],
       ),
+      bottomNavigationBar: Manual(screen: "profile"),
       body: Container(
         width: double.infinity,
         child: Column(
@@ -92,7 +93,7 @@ class _UserProfileState extends State<UserProfile> {
               margin: EdgeInsets.all(20),
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.black,
+                color: Colors.white,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(100),
@@ -174,6 +175,10 @@ class _UserProfileState extends State<UserProfile> {
                             ListTile(
                               title: Text("Docs"),
                               trailing: Text(docPostCount.toString()),
+                            ),
+                            ListTile(
+                              title: Text("Subscribed"),
+                              trailing: Text(subscribedCount.toString()),
                             ),
                           ],
                         ),

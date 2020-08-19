@@ -33,7 +33,6 @@ class _DocsSectionState extends State<DocsSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: StreamBuilder(
         stream: widget.all
             ? Firestore.instance.collection("Doc-Posts").snapshots()
@@ -90,7 +89,7 @@ class DocCard extends StatelessWidget {
       margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: Colors.black),
       ),
       child: Column(
         children: [
@@ -113,7 +112,6 @@ class DocCard extends StatelessWidget {
                     username,
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -142,12 +140,10 @@ class DocCard extends StatelessWidget {
                 ),
                 Text(
                   filename,
-                  style: TextStyle(
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(),
                 ),
                 IconButton(
-                  icon: Icon(Icons.file_download, color: Colors.white),
+                  icon: Icon(Icons.file_download, color: Colors.black),
                   onPressed: () async {
                     if (await canLaunch(docPath))
                       launch(docPath);

@@ -81,6 +81,10 @@ class _PostImageState extends State<PostImage> {
     for (int i = 0; i < tagList.length; i++) {
       tagMap["tag[$i]"] = tagList[i];
     }
+
+    Map<String, String> comments = Map<String, String>();
+    List<String> likes = [];
+
     await documentReference.setData(
       {
         // "images": imagesMap,
@@ -89,6 +93,10 @@ class _PostImageState extends State<PostImage> {
         "user_id": id,
         "name": name,
         "avatar": avatar,
+        "postNo": noOfPosts.toString(),
+        "likes": likes,
+        "likes_count": 0,
+        "Comments": comments,
       },
     );
     noOfPosts += 1;

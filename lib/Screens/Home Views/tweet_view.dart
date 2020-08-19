@@ -31,7 +31,6 @@ class _TweetSectionState extends State<TweetSection> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       body: StreamBuilder(
         stream: widget.all
             ? Firestore.instance.collection("Tweet-Posts").snapshots()
@@ -86,7 +85,7 @@ class TweetCard extends StatelessWidget {
       margin: EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.grey),
+        border: Border.all(color: Colors.black),
       ),
       child: Column(
         children: [
@@ -110,7 +109,6 @@ class TweetCard extends StatelessWidget {
                     username,
                     style: TextStyle(
                       fontSize: 20,
-                      color: Colors.white,
                     ),
                   ),
                 ],
@@ -126,7 +124,6 @@ class TweetCard extends StatelessWidget {
             alignment: Alignment.centerLeft,
             child: Text(tweet,
                 style: TextStyle(
-                  color: Colors.white,
                   letterSpacing: 1,
                   height: 2,
                 )),

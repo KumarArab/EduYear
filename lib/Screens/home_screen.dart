@@ -1,14 +1,16 @@
-import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/Home%20Views/docs_view.dart';
 import 'package:app/Screens/Home%20Views/image_view.dart';
 import 'package:app/Screens/Home%20Views/poll_view.dart';
 import 'package:app/Screens/Home%20Views/tweet_view.dart';
+import 'package:app/Screens/banners.dart';
 import 'package:app/Screens/post_screens/post_Image.dart';
 import 'package:app/Screens/post_screens/post_document.dart';
 import 'package:app/Screens/post_screens/post_polls.dart';
 import 'package:app/Screens/post_screens/post_tweet.dart';
 import 'package:app/Screens/Search%20Views/search_screen.dart';
 import 'package:app/Screens/Profile/user_profile.dart';
+import 'package:app/helpers/common_widgets.dart';
+import 'package:app/helpers/handle_dynamicLinks.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:app/models/image_post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -32,112 +34,40 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   UserMaintainer userMaintainer = UserMaintainer();
+  DynamicLinksService dynamicLinksService = DynamicLinksService();
+
   PageController _controller = PageController(
     initialPage: 0,
   );
-  Map<String, String> _paths;
 
-  Future<void> openFileExplorer() async {
-    try {
-      // setState(() {
-      //   isUploadig = true;
-      // });
-      _paths = await FilePicker.getMultiFilePath(type: FileType.image);
-      Map<String, String> paths = _paths;
-      paths.forEach((key, value) {
-        print("$key : $value");
-      });
-      Navigator.of(context).pushNamed(
-        PostImage.routeName,
-        arguments: ImagePost(paths: paths),
-      );
-      // setState(() {
-      //   isUploadig = false;
-      // });
-    } on PlatformException catch (e) {
-      print(e.toString());
-    }
-  }
-
-  Future<void> openPdfExplorer() async {
-    String docPath = await FilePicker.getFilePath(type: FileType.custom);
-    String _extension = docPath.toString().split(".").last;
-    print(docPath);
-    if (_extension == "pdf") {
-      Navigator.of(context)
-          .pushNamed(PostDocument.routeName, arguments: docPath);
-    }
-  }
-
-  showAlertDailogBox(BuildContext context) {
-    return showDialog(
-      context: context,
-      builder: (ctx) {
-        return AlertDialog(
-          title: Center(
-            child: Text("Menu"),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                leading: Icon(Icons.add),
-                title: Text("Add new post"),
-                onTap: () => openFileExplorer(),
-              ),
-              ListTile(
-                leading: Icon(Icons.text_rotation_none),
-                title: Text("Add new tweet"),
-                onTap: () => Navigator.pushNamed(context, PostTweet.routeName),
-              ),
-              ListTile(
-                leading: Icon(Icons.poll),
-                title: Text("Add new Poll"),
-                onTap: () => Navigator.pushNamed(context, PostPolls.routeName),
-              ),
-              ListTile(
-                leading: Icon(Icons.picture_as_pdf),
-                title: Text("Add new Pdf"),
-                onTap: () => openPdfExplorer(),
-              ),
-              // ListTile(
-              //   leading: Icon(Icons.search),
-              //   title: Text("Search"),
-              //   onTap: () =>
-              //       Navigator.pushNamed(context, SearchScreen.routeName),
-              // ),
-              ListTile(
-                leading: Icon(Icons.supervised_user_circle),
-                title: Text("Profile"),
-                onTap: () {
-                  Navigator.of(context).popAndPushNamed('/user-profile');
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
+  @override
+  void didChangeDependencies() async {
+    await dynamicLinksService.handleDynamicLinks(context);
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.black,
+        elevation: 0,
+        backgroundColor: Colors.white,
         title: Text(
           "APPNAME",
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.white),
+          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
+            icon: Icon(Icons.notification_important, color: Colors.black),
             onPressed: () {
-              Navigator.pushNamed(context, SearchScreen.routeName);
+              Navigator.pushNamed(context, Banners.routeName);
             },
           ),
         ],
+      ),
+      bottomNavigationBar: Manual(
+        screen: "home",
       ),
       body: Stack(
         children: [
@@ -158,17 +88,22 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          Positioned(
-            bottom: 20,
-            right: 20,
-            child: FloatingActionButton(
-              backgroundColor: Colors.white,
-              onPressed: () {
-                showAlertDailogBox(context);
-              },
-              child: Icon(Icons.menu, color: Colors.black),
-            ),
-          ),
+          // Positioned(
+          //   bottom: 0,
+          //   child:
+          // )
+
+          // Positioned(
+          //   bottom: 20,
+          //   right: 20,
+          //   child: FloatingActionButton(
+          //     backgroundColor: Colors.black,
+          //     onPressed: () {
+          //       showAlertDailogBox(context);
+          //     },
+          //     child: Icon(Icons.menu, color: Colors.white),
+          //   ),
+          // ),
         ],
       ),
     );
