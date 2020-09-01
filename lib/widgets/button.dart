@@ -11,13 +11,13 @@ class Button extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 60,
-      margin: EdgeInsets.symmetric(horizontal: 10),
+      margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
-          color: Color(0xffefeeff),
+          color: Colors.teal.withOpacity(0.2),
           boxShadow: [
             BoxShadow(
-                color: Color(0XFFe1dffe),
+                color: Colors.teal.withOpacity(0.2),
                 offset: Offset(6, 2),
                 blurRadius: 1.0,
                 spreadRadius: 2.0),

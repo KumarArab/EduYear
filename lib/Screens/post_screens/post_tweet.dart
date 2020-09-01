@@ -1,3 +1,5 @@
+import 'package:app/helpers/styles.dart';
+import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -6,41 +8,48 @@ class PostTweet extends StatelessWidget {
   static const routeName = "/post-tweet";
   String tweet;
   String tags;
+  UserMaintainer userMaintainer = UserMaintainer();
 
   Future<void> postTweet(BuildContext context) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String id = prefs.getString("email") != null
-        ? prefs.getString("email")
-        : prefs.getString("phoneNumber");
-    int noOfPosts = prefs.getInt("no_of_posts");
-    String name = prefs.getString("name");
-    String avatar = prefs.getString("profile_pic");
+    String id = prefs.getString("user_id");
+    String timestamp = DateTime.now().toIso8601String();
 
     DocumentReference documentReference =
-        Firestore.instance.collection("Tweet-Posts").document("$id-$noOfPosts");
+        Firestore.instance.collection("Tweet-Posts").document(timestamp);
 
     List<String> tagList = tags.split(" ");
-    Map<String, String> tagMap = Map<String, String>();
     for (int i = 0; i < tagList.length; i++) {
-      tagMap["tag[$i]"] = tagList[i];
+      tagList[i] = tagList[i].toLowerCase();
     }
     await documentReference.setData(
       {
-        // "images": imagesMap,
         "tweet": tweet,
         "tags": tagList,
         "user_id": id,
-        "name": name,
-        "avatar": avatar,
+        "likes_count": 0,
+        "likes": [],
+        "timestamp": timestamp,
+        "comments": {}
       },
     );
-    noOfPosts += 1;
-    await Firestore.instance
-        .collection("Users")
-        .document(id)
-        .updateData({"no_of_posts": noOfPosts.toString()});
-    await prefs.setInt("no_of_posts", noOfPosts);
+
     Navigator.of(context).pop();
+  }
+
+  bool check(BuildContext context) {
+    if (tweet != null && tags != null) {
+      if (tags.split(" ").length > 11) {
+        userMaintainer.showDailogBox(context, Text("Too many Tags"),
+            Text("You can't add more than 10 tags"));
+        return false;
+      }
+      return true;
+    } else {
+      userMaintainer.showDailogBox(context, Text("You missed any field"),
+          Text("Both Fields are important. Make sure you fill both of them"));
+      return false;
+    }
   }
 
   @override
@@ -53,7 +62,7 @@ class PostTweet extends StatelessWidget {
             Column(
               children: [
                 Container(
-                  margin: EdgeInsets.all(20),
+                  margin: EdgeInsets.all(10),
                   decoration: BoxDecoration(
                     border: Border.all(),
                     borderRadius: BorderRadius.circular(20),
@@ -68,7 +77,7 @@ class PostTweet extends StatelessWidget {
                         TextStyle(color: Colors.black, fontFamily: "Poppins"),
                     cursorColor: Colors.black,
                     decoration: InputDecoration(
-                      contentPadding: EdgeInsets.only(left: 25),
+                      contentPadding: EdgeInsets.only(left: 20),
                       border: OutlineInputBorder(borderSide: BorderSide.none),
                       hintText: "Enter your tweet",
                       hintStyle: TextStyle(
@@ -78,38 +87,37 @@ class PostTweet extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding: EdgeInsets.all(20),
+                  decoration: kTagContainerDecoration,
+                  padding: EdgeInsets.all(10),
+                  margin: EdgeInsets.all(10),
                   child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Add Tags",
-                      ),
+                      decoration:
+                          setTextFieldDecoration("Add spaced tags here"),
                       onChanged: (value) {
                         tags = value;
                       }),
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                Container(
-                  margin: EdgeInsets.all(20),
-                  padding: EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: Colors.black.withOpacity(0.8),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                  child: FlatButton(
-                    onPressed: () {
-                      postTweet(context);
-                    },
-                    child: Text(
-                      "Finish",
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
+            Container(
+              margin: EdgeInsets.all(20),
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.teal,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: FlatButton(
+                onPressed: () {
+                  if (check(context)) {
+                    postTweet(context);
+                    userMaintainer.showToast("Tweet Uploaded");
+                  }
+                },
+                child: Text(
+                  "POST",
+                  style: TextStyle(color: Colors.white),
                 ),
-              ],
+              ),
             )
           ],
         ),

@@ -23,7 +23,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                 child: Stack(
                   children: [
                     Container(
-                      color: Color(0xffefeeff),
+                      color: Colors.teal.withOpacity(0.2),
                     ),
                     Column(
                       children: [
@@ -46,7 +46,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                         Container(
                           height: MediaQuery.of(context).size.height * 0.6,
                           width: double.infinity,
-                          padding: EdgeInsets.all(40),
+                          padding: const EdgeInsets.all(40),
                           decoration: BoxDecoration(
                             color: Color(0xfffefefe),
                             borderRadius: BorderRadius.only(
@@ -75,7 +75,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                                 Provider.of<LoginStore>(context)
                                                     .caption[index] +
                                                 '"',
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontSize: 24,
                                                 fontFamily: "MarckScript",
                                                 color: Colors.black),
@@ -95,9 +95,9 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                         mainAxisAlignment:
                                             MainAxisAlignment.spaceAround,
                                         children: [
-                                          Text(
+                                          const Text(
                                             "SignUp / LogIn",
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontSize: 35,
                                                 fontFamily: "Poppins",
                                                 color: Colors.black87),
@@ -117,7 +117,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                                 },
                                               ),
                                               SizedBox(
-                                                height: 30,
+                                                height: 10,
                                               ),
                                               Button(
                                                 imageAsset:
@@ -133,9 +133,9 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                               ),
                                             ],
                                           ),
-                                          Text(
+                                          const Text(
                                             "facing any problems?? contact us",
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                               fontFamily: "Poppins",
                                               color: Colors.black54,
                                               decoration:

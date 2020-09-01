@@ -2,6 +2,7 @@ import 'package:app/Login-System/signup_methods.dart';
 import 'package:app/Provider/login_store.dart';
 import 'package:app/Screens/home_screen.dart';
 import 'package:app/helpers/handle_dynamicLinks.dart';
+import 'package:app/helpers/user_data.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -34,7 +35,8 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xffefeeff),
-    );
+        body: Center(
+      child: Text("Loading..."),
+    ));
   }
 }

@@ -26,6 +26,7 @@ class DynamicLinksService {
       if (deepLink.pathSegments.contains("Image-Posts")) {
         var title = deepLink.queryParameters['postId'];
         if (title != null) {
+          print(title);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -37,8 +38,45 @@ class DynamicLinksService {
           );
         }
       } else if (deepLink.pathSegments.contains("Poll-Posts")) {
+        var title = deepLink.queryParameters['postId'];
+        if (title != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (ctx) => SharedPost(
+                postId: title,
+                postType: "Poll-Posts",
+              ),
+            ),
+          );
+        }
       } else if (deepLink.pathSegments.contains("Tweet-Posts")) {
-      } else if (deepLink.pathSegments.contains("Doc-Posts")) {}
+        var title = deepLink.queryParameters['postId'];
+        if (title != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (ctx) => SharedPost(
+                postId: title,
+                postType: "Tweet-Posts",
+              ),
+            ),
+          );
+        }
+      } else if (deepLink.pathSegments.contains("Doc-Posts")) {
+        var title = deepLink.queryParameters['postId'];
+        if (title != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (ctx) => SharedPost(
+                postId: title,
+                postType: "Doc-Posts",
+              ),
+            ),
+          );
+        }
+      }
     }
   }
 

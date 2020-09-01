@@ -16,9 +16,13 @@ class GetDetails extends StatefulWidget {
 }
 
 class _GetDetailsState extends State<GetDetails> {
-  String username;
+  String username, defaultName;
   String newImagePath;
   String downloadUrl;
+  String userId;
+  bool isLoading = false;
+  FirebaseUser args;
+
   final FirebaseStorage storage = FirebaseStorage.instance;
   CollectionReference collectionReference =
       Firestore.instance.collection("Users");
@@ -32,28 +36,29 @@ class _GetDetailsState extends State<GetDetails> {
   }
 
   Future<void> createNewProfileNode(FirebaseUser user) async {
+    userId = user.email != null ? user.email : user.phoneNumber;
+    List<dynamic> tags = username.split(" ");
+    for (int i = 0; i < tags.length; i++) {
+      tags[i] = tags[i].toLowerCase();
+    }
     Map<String, dynamic> userProfile = Map<String, String>();
     userProfile["name"] = username;
     userProfile["profile_pic"] = downloadUrl;
-    userProfile["uid"] = user.uid;
-    userProfile["email"] = user.email;
-    userProfile["phoneNumber"] = user.phoneNumber;
-    userProfile["no_of_posts"] = "0";
-
-    if (user.email != null) {
-      await collectionReference.document("${user.email}").setData(userProfile);
-      await collectionReference.document("${user.email}").updateData({
-        "subscribed": [user.email]
-      });
-    } else {
-      await collectionReference
-          .document("${user.phoneNumber}")
-          .setData(userProfile);
-      await collectionReference.document("${user.phoneNumber}").updateData({
-        "subscribed": [user.phoneNumber]
-      });
-    }
-    await userMaintainer.saveUserDataToLocal(userProfile);
+    userProfile["user_id"] = userId;
+    userProfile["bio"] = "Add your bio here";
+    await collectionReference.document(userId).setData(userProfile);
+    await collectionReference.document(userId).updateData({
+      "subscribed": [userId],
+      "followers": 1,
+      "followings": 1,
+      "tags": tags,
+      "verified": false
+    });
+    DocumentSnapshot documentSnapshot =
+        await Firestore.instance.collection("Users").document(userId).get();
+    Map<String, dynamic> fetchedUserData = documentSnapshot.data;
+    await userMaintainer.saveUserDataToLocal(fetchedUserData);
+    userMaintainer.showToast("$username profile created successfully");
     Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => HomeScreen()),
         (Route<dynamic> route) => false);
@@ -70,47 +75,79 @@ class _GetDetailsState extends State<GetDetails> {
       if (snapshot.error == null) {
         downloadUrl = await snapshot.ref.getDownloadURL();
       }
-    } else {
+    } else if (user.photoUrl != null) {
       downloadUrl = user.photoUrl;
+    }
+  }
+
+  bool check() {
+    if (newImagePath != null || args.photoUrl != null) {
+      if (username == null || username == "") {
+        if (defaultName != null && defaultName != "") {
+          setState(() {
+            username = defaultName;
+          });
+          return true;
+        } else {
+          return false;
+        }
+      }
+      return true;
+    } else {
+      return false;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final FirebaseUser args = ModalRoute.of(context).settings.arguments;
-    username = args.displayName;
-    return Scaffold(
-        backgroundColor: Color(0xffefeeff),
+    args = ModalRoute.of(context).settings.arguments;
+    defaultName = args.displayName;
+    return WillPopScope(
+      onWillPop: () async {
+        if (isLoading) {
+          userMaintainer.showToast("Don't close, account creation in progress");
+          return false;
+        } else {
+          return true;
+        }
+      },
+      child: Scaffold(
         body: SafeArea(
           child: Container(
             width: MediaQuery.of(context).size.width,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 30,
-                ),
-                Text(
-                  "May I know your name?",
-                  style: TextStyle(
-                    fontSize: 30,
+            height: MediaQuery.of(context).size.height,
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  SizedBox(
+                    height: 30,
                   ),
-                ),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.black,
-                        ),
-                        width: MediaQuery.of(context).size.width * 0.55,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(500),
-                          child: AspectRatio(
-                            aspectRatio: 1 / 1,
+                  const Text(
+                    "May I know your name?",
+                    style: TextStyle(
+                      fontSize: 30,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 30,
+                  ),
+                  Container(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.black,
+                          ),
+                          width: MediaQuery.of(context).size.width * 0.55,
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(500),
                             child: newImagePath != null
-                                ? Image.file(File(newImagePath))
+                                ? Image.file(
+                                    File(newImagePath),
+                                    fit: BoxFit.cover,
+                                  )
                                 : (args.photoUrl != null
                                     ? Image.network(
                                         args.photoUrl,
@@ -129,81 +166,97 @@ class _GetDetailsState extends State<GetDetails> {
                                       )),
                           ),
                         ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.all(10),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 5,
+                        Container(
+                          margin: EdgeInsets.all(10),
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 5,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.5),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          child: FlatButton(
+                            onPressed: () {
+                              chooseNewProfilePicture();
+                            },
+                            child: Text(
+                              "Change Photo",
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ),
                         ),
+                        Container(
+                          margin: EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            border: Border.all(),
+                            borderRadius: BorderRadius.circular(100),
+                          ),
+                          padding: const EdgeInsets.all(10),
+                          child: TextField(
+                            onChanged: (value) {
+                              username = value;
+                            },
+                            style: const TextStyle(
+                                color: Colors.black, fontFamily: "Poppins"),
+                            cursorColor: Colors.black,
+                            decoration: InputDecoration(
+                              contentPadding: EdgeInsets.only(left: 25),
+                              border: OutlineInputBorder(
+                                  borderSide: BorderSide.none),
+                              hintText: defaultName != null
+                                  ? defaultName
+                                  : "Enter your name here",
+                              hintStyle: TextStyle(
+                                  color: Colors.black.withOpacity(0.5),
+                                  fontFamily: "Poppins"),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        margin: const EdgeInsets.all(20),
+                        padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.teal,
                           borderRadius: BorderRadius.circular(100),
                         ),
                         child: FlatButton(
                           onPressed: () {
-                            chooseNewProfilePicture();
+                            if (check()) {
+                              setState(() {
+                                isLoading = true;
+                              });
+                              uploadNewUserImage(args)
+                                  .then((_) => createNewProfileNode(args));
+                            } else {
+                              userMaintainer.showDailogBox(
+                                context,
+                                Text("Snap!"),
+                                Text("Both fields are necessary"),
+                              );
+                            }
                           },
-                          child: Text(
-                            "Change Photo",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ),
-                      Container(
-                        margin: EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          border: Border.all(),
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        padding: const EdgeInsets.all(10),
-                        child: TextField(
-                          onChanged: (value) {
-                            username = value;
-                          },
-                          style: TextStyle(
-                              color: Colors.black, fontFamily: "Poppins"),
-                          cursorColor: Colors.black,
-                          decoration: InputDecoration(
-                            contentPadding: EdgeInsets.only(left: 25),
-                            border:
-                                OutlineInputBorder(borderSide: BorderSide.none),
-                            hintText:
-                                username == "" ? "Enter your name" : username,
-                            hintStyle: TextStyle(
-                                color: Colors.black.withOpacity(0.5),
-                                fontFamily: "Poppins"),
-                          ),
+                          child: isLoading
+                              ? Center(child: CircularProgressIndicator())
+                              : Text(
+                                  "Finish",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      margin: EdgeInsets.all(20),
-                      padding: EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.8),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: FlatButton(
-                        onPressed: () {
-                          uploadNewUserImage(args)
-                              .then((_) => createNewProfileNode(args));
-                        },
-                        child: Text(
-                          "Finish",
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              ],
+                  )
+                ],
+              ),
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 }

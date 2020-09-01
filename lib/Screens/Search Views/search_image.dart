@@ -1,40 +1,24 @@
+import 'package:app/Provider/user_activity.dart';
 import 'package:app/Screens/Home%20Views/image_view.dart';
+import 'package:app/helpers/user_data.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-class SearchImages extends StatefulWidget {
-  final List<DocumentSnapshot> searchedImageList;
-  SearchImages({this.searchedImageList});
-  @override
-  _SearchImagesState createState() => _SearchImagesState();
-}
-
-class _SearchImagesState extends State<SearchImages> {
+class SearchImages extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return widget.searchedImageList == null
+    return Provider.of<UserActivity>(context).searchString == null
         ? ImageSection(
-            all: true,
+            query: Firestore.instance.collection("Image-Posts").snapshots(),
           )
-        : ListView.builder(
-            itemBuilder: (ctx, i) {
-              Map<String, dynamic> imagesMap = new Map<String, dynamic>();
-              imagesMap = widget.searchedImageList[i]["images"];
-              List<String> mapurls = [];
-              imagesMap != null
-                  ? imagesMap.forEach((key, value) {
-                      mapurls.add(value);
-                    })
-                  : {};
-              return ImageCard(
-                avatar: widget.searchedImageList[i]["avatar"],
-                caption: widget.searchedImageList[i]["caption"],
-                imageUrl: mapurls,
-                user_id: widget.searchedImageList[i]["user_id"],
-                username: widget.searchedImageList[i]["name"],
-              );
-            },
-            itemCount: widget.searchedImageList.length,
+        : ImageSection(
+            query: Firestore.instance
+                .collection("Image-Posts")
+                .where("tags",
+                    arrayContainsAny:
+                        Provider.of<UserActivity>(context).searchString)
+                .snapshots(),
           );
   }
 }

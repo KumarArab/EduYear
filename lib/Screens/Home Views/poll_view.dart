@@ -1,47 +1,23 @@
+import 'package:app/Screens/Profile/user_profile.dart';
 import 'package:app/Screens/Profile/visit_profile.dart';
+import 'package:app/helpers/common_widgets.dart';
+import 'package:app/helpers/user_data.dart';
 import 'package:app/helpers/user_maintainance.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class PollSection extends StatefulWidget {
-  final bool all;
-  PollSection({this.all});
-  @override
-  _PollSectionState createState() => _PollSectionState();
-}
-
-class _PollSectionState extends State<PollSection> {
-  List<String> subscribedList;
-  String currentUserId;
-  UserMaintainer userMaintainer = UserMaintainer();
-
-  @override
-  void didChangeDependencies() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    currentUserId = await userMaintainer.getUserId();
-    if (mounted) {
-      setState(() {
-        subscribedList = prefs.getStringList("subscribed");
-      });
-    }
-    print(subscribedList);
-
-    // await fetchImagePosts();
-
-    super.didChangeDependencies();
-  }
+class PollSection extends StatelessWidget {
+  final Stream<QuerySnapshot> query;
+  PollSection({this.query});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: StreamBuilder(
-        stream: widget.all
-            ? Firestore.instance.collection("Poll-Posts").snapshots()
-            : Firestore.instance
-                .collection("Poll-Posts")
-                .where("user_id", whereIn: subscribedList)
-                .snapshots(),
+        stream: query,
         builder: (context, snapshot) {
           return !snapshot.hasData
               ? Text('PLease Wait')
@@ -52,7 +28,8 @@ class _PollSectionState extends State<PollSection> {
                         .documents[snapshot.data.documents.length - 1 - index];
                     List<dynamic> voters = products["voters"];
                     bool isAlreadyVoted = false;
-                    if (voters.contains(currentUserId)) {
+                    if (voters.contains(
+                        Provider.of<UserData>(context).currentUserId)) {
                       isAlreadyVoted = true;
                     }
 
@@ -67,14 +44,23 @@ class _PollSectionState extends State<PollSection> {
                     //     : {};
 
                     // if (mapurls.length == 1) {
+                    List<dynamic> likes = products["likes"];
+
+                    bool isAlreadyLiked = false;
+                    if (likes.contains(
+                        Provider.of<UserData>(context).currentUserId)) {
+                      isAlreadyLiked = true;
+                    }
                     return (PollCard(
                       question: products["question"],
                       userId: products["user_id"],
-                      username: products["name"],
-                      avatar: products["avatar"],
                       optionsMap: products["options"],
-                      postNo: products["postNo"],
+                      postNo: products["timestamp"],
                       isAlreadyVoted: isAlreadyVoted,
+                      image: products["image"],
+                      likes_count: products["likes_count"],
+                      isAlreadyLiked: isAlreadyLiked,
+                      comments: products["Comments"],
                     ));
                     //}
 
@@ -89,7 +75,10 @@ class _PollSectionState extends State<PollSection> {
 }
 
 class PollCard extends StatefulWidget {
-  final String question, userId, postNo, username, avatar;
+  final String question, userId, postNo, image;
+  final int likes_count;
+  final bool isAlreadyLiked;
+  final Map<String, dynamic> comments;
   bool isAlreadyVoted;
 
   Map<dynamic, dynamic> optionsMap;
@@ -97,10 +86,12 @@ class PollCard extends StatefulWidget {
     this.question,
     this.userId,
     this.postNo,
-    this.username,
-    this.avatar,
     this.optionsMap,
     this.isAlreadyVoted,
+    this.image,
+    this.comments,
+    this.isAlreadyLiked,
+    this.likes_count,
   });
   @override
   _PollCardState createState() => _PollCardState();
@@ -108,16 +99,32 @@ class PollCard extends StatefulWidget {
 
 class _PollCardState extends State<PollCard> {
   UserMaintainer userMaintainer = UserMaintainer();
+  TextEditingController commentController = TextEditingController();
+  CommonWidgets commonWidgets = CommonWidgets();
   String currentUserId;
 
   List<String> options;
   List<int> votes;
   int totalVotes;
+  bool showComments = false;
+  List<String> commenter;
+  List<String> comment;
+
+  createCommentList() {
+    commenter = [];
+    comment = [];
+    widget.comments.forEach((key, value) {
+      commenter.add(key);
+      comment.add(value);
+    });
+  }
 
   @override
   void initState() {
     createOptionsList();
     countOptions();
+    widget.comments != null ? createCommentList() : {};
+    getProfileDetails();
     super.initState();
   }
 
@@ -139,20 +146,37 @@ class _PollCardState extends State<PollCard> {
   }
 
   double calculateVote(int index) {
+    if (totalVotes == 0) {
+      return 0;
+    }
     return votes[index] / totalVotes;
   }
 
-  Future<void> registerVote(int index) async {
-    Map<String, dynamic> newOptionMap = widget.optionsMap;
-    newOptionMap[options[index]] = votes[index] + 1;
-    DocumentReference documentReference = Firestore.instance
-        .collection("Poll-Posts")
-        .document("${widget.userId}-${widget.postNo}");
-    await documentReference.updateData({"options": newOptionMap});
+  Future<void> registerVote(String option, int votecount) async {
+    // Map<String, dynamic> newOptionMap = widget.optionsMap;
+    widget.optionsMap[option] = votecount + 1;
+    print(widget.postNo);
+    DocumentReference documentReference =
+        Firestore.instance.collection("Poll-Posts").document(widget.postNo);
+    await documentReference.updateData({"options": widget.optionsMap});
     currentUserId = await userMaintainer.getUserId();
     await documentReference.updateData({
       "voters": FieldValue.arrayUnion([currentUserId])
     });
+    userMaintainer.showToast("You vote has been recorded");
+  }
+
+  String username = "loading";
+  String avatar = "";
+  Future<void> getProfileDetails() async {
+    DocumentSnapshot profileInfo =
+        await commonWidgets.getProfileInfo(widget.userId);
+    if (mounted) {
+      setState(() {
+        avatar = profileInfo["profile_pic"];
+        username = profileInfo["name"];
+      });
+    }
   }
 
   @override
@@ -166,34 +190,27 @@ class _PollCardState extends State<PollCard> {
       ),
       child: Column(
         children: [
+          PostOwnerDetails(
+            user_id: widget.userId,
+            avatar: avatar,
+            username: username,
+          ),
           Container(
-            alignment: Alignment.centerLeft,
-            child: GestureDetector(
-              onTap: () => Navigator.pushNamed(context, VisitProfile.routeName,
-                  arguments: widget.userId),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    child: ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: Image.network(widget.avatar)),
-                  ),
-                  SizedBox(
-                    width: 10,
-                  ),
-                  Text(
-                    widget.username,
-                    style: TextStyle(
-                      fontSize: 20,
+            padding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            child: widget.image != null
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: CachedNetworkImage(
+                      imageUrl: widget.image,
+                      placeholder: (context, url) => CircularProgressIndicator(
+                        strokeWidth: 1,
+                      ),
+                      errorWidget: (context, url, error) => Icon(Icons.error),
                     ),
+                  )
+                : SizedBox(
+                    height: 0,
                   ),
-                ],
-              ),
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: 20,
-              vertical: 10,
-            ),
           ),
           Container(
             padding: EdgeInsets.symmetric(
@@ -278,7 +295,7 @@ class _PollCardState extends State<PollCard> {
                         ),
                         child: FlatButton(
                           onPressed: () {
-                            registerVote(index)
+                            registerVote(options[index], votes[index])
                                 .then((_) => createOptionsList());
                           },
                           child: Text(
@@ -289,7 +306,75 @@ class _PollCardState extends State<PollCard> {
                     },
                     scrollDirection: Axis.horizontal,
                   ),
-                )
+                ),
+          Divider(),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                LikeButton(
+                  postType: "Poll-Posts",
+                  isAlreadyLiked: widget.isAlreadyLiked,
+                  likes_count: widget.likes_count,
+                  postNo: widget.postNo,
+                  userId: widget.userId,
+                ),
+                IconButton(
+                  iconSize: 25,
+                  color: Colors.black,
+                  icon: Icon(Icons.comment),
+                  onPressed: () {
+                    setState(() {
+                      showComments = !showComments;
+                    });
+                  },
+                ),
+                SizedBox(
+                  width: 10,
+                ),
+                IconButton(
+                  iconSize: 25,
+                  color: Colors.black,
+                  icon: Icon(Icons.share),
+                  onPressed: () {
+                    commonWidgets.sharePost(
+                        "Poll-Posts", widget.userId, widget.postNo);
+                  },
+                ),
+              ],
+            ),
+          ),
+          showComments
+              ? (widget.comments != null
+                  ? CommentList(
+                      comment: comment,
+                      commenter: commenter,
+                    )
+                  : Container(
+                      alignment: Alignment.center,
+                      child: Text("No Commnets yet"),
+                    ))
+              : Container(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20.0),
+            child: TextField(
+              controller: commentController,
+              decoration: InputDecoration(hintText: "Enter your comment"),
+              onSubmitted: (value) async {
+                commonWidgets
+                    .addComment("Poll-Posts", value, widget.comments, username,
+                        widget.userId, widget.postNo)
+                    .then((_) {
+                  setState(() {
+                    showComments = false;
+                  });
+                  commentController.clear();
+                  createCommentList();
+                });
+              },
+            ),
+          ),
         ],
       ),
     );

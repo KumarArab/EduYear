@@ -43,19 +43,18 @@ class LoginStore with ChangeNotifier {
   ];
 
   Future<bool> isAlreadyAuthenticated() async {
-    // firebaseUser = await _auth.currentUser();
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('uid') != null) {
+    UserMaintainer userMaintainer = UserMaintainer();
+    String userId = prefs.getString('user_id');
+    if (userId != null) {
+      DocumentSnapshot documentSnapshot =
+          await Firestore.instance.collection("Users").document(userId).get();
+      Map<String, dynamic> fetchedUserData = documentSnapshot.data;
+      await userMaintainer.saveUserDataToLocal(fetchedUserData);
       return true;
     } else {
       return false;
     }
-    // if (firebaseUser != null) {
-    //   print(firebaseUser.displayName);
-    //   return true;
-    // } else {
-    //   return false;
-    // }
   }
 
   Future<void> getCodeWithPhoneNumber(
@@ -144,9 +143,6 @@ class LoginStore with ChangeNotifier {
 
     firebaseUser = result.user;
     await userMaintainer.checkUserExistance(firebaseUser, context, "phone");
-    // Navigator.of(context).pushAndRemoveUntil(
-    //     MaterialPageRoute(builder: (_) => HomeScreen()),
-    //     (Route<dynamic> route) => false);
 
     isLoginLoading = false;
     isOtpLoading = false;
@@ -178,72 +174,10 @@ class LoginStore with ChangeNotifier {
 
     firebaseUser = authResult.user;
     await userMaintainer.checkUserExistance(firebaseUser, context, "google");
-    // await saveDetails(firebaseUser);
-    // await uploadUserInfo();
-  }
-
-  Future<void> saveDetails(FirebaseUser firebaseUser) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (prefs.getString('uid') == null ||
-        prefs.getString('uid') != firebaseUser.uid) {
-      await prefs.setString("name", firebaseUser.displayName);
-      await prefs.setString("email", firebaseUser.email);
-      await prefs.setString("phone", firebaseUser.phoneNumber);
-      await prefs.setString("uid", firebaseUser.uid);
-      await prefs.setString("picUrl", firebaseUser.photoUrl);
-      await prefs.setInt("noOfPosts", 0);
-      await prefs.setInt("followers", 0);
-      await prefs.setInt("followings", 0);
-    }
-  }
-
-  Future<void> fetchDetails() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    username = prefs.getString("name");
-    phone = prefs.getString("phone");
-    email = prefs.getString("email");
-    uid = prefs.getString("uid");
-    photourl = prefs.getString('picUrl');
-    notifyListeners();
-  }
-
-  Future<void> uploadUserInfo() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    Map<String, dynamic> userInfo = {
-      'name': prefs.getString("name"),
-      'email': prefs.getString("email"),
-      'uid': prefs.getString("uid"),
-      'phone': prefs.getString("phone"),
-      'pic': prefs.getString("picUrl"),
-    };
-    print(
-        "---------------------------------Saving----------------------------------");
-    print(
-        "---------------------------------${prefs.getString('uid')}----------------------------------");
-    try {
-      await collectionReference
-          .document(prefs.getString('uid'))
-          .setData(userInfo);
-    } catch (e) {
-      print(e);
-    }
   }
 
   Future<FirebaseUser> getCurrentUser() async {
     FirebaseUser currentUser = await _auth.currentUser();
     return currentUser;
   }
-
-  // Future<User> getUserDetails() async {
-  //   // GoogleSignInAccount currentUser = await _googleSignIn.currentUser;
-  //   FirebaseUser currentUser = await _auth.currentUser();
-  //   print(
-  //       "---------------------------------${currentUser.displayName}----------------------------------");
-  //   DocumentSnapshot documentSnapshot =
-  //       await collectionReference.document(currentUser.uid).get();
-
-  //   return User(
-  //       uid: documentSnapshot.data['uid'],
-  //       username: documentSnapshot.data['name']);
-  // }
 }

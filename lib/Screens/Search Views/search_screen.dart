@@ -1,12 +1,18 @@
+import 'package:app/Provider/user_activity.dart';
 import 'package:app/Screens/Home%20Views/docs_view.dart';
 import 'package:app/Screens/Home%20Views/image_view.dart';
 import 'package:app/Screens/Home%20Views/poll_view.dart';
 import 'package:app/Screens/Home%20Views/tweet_view.dart';
+import 'package:app/Screens/Search%20Views/search_accounts.dart';
+import 'package:app/Screens/Search%20Views/search_docs.dart';
 import 'package:app/Screens/Search%20Views/search_image.dart';
+import 'package:app/Screens/Search%20Views/search_polls.dart';
+import 'package:app/Screens/Search%20Views/search_tweets.dart';
 import 'package:app/helpers/common_widgets.dart';
 import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class SearchScreen extends StatefulWidget {
   static const routeName = "search-screen";
@@ -20,13 +26,20 @@ class _SearchScreenState extends State<SearchScreen> {
   );
   String searchString;
   int currentPageId = 0;
-  UserMaintainer userMaintainer = UserMaintainer();
-  List<DocumentSnapshot> searchedImageSnapShot;
+
+  // @override
+  // void dispose() {
+  //   Provider.of<UserActivity>(context).clearSearchLists();
+  //   super.dispose();
+  // }
+
   @override
   Widget build(BuildContext context) {
+    final userActivity = Provider.of<UserActivity>(context, listen: false);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.white,
+        elevation: 0,
         title: Container(
           child: TextField(
             textInputAction: TextInputAction.search,
@@ -39,13 +52,11 @@ class _SearchScreenState extends State<SearchScreen> {
             onChanged: (value) {
               searchString = value;
             },
-            onSubmitted: (value) async {
-              List<DocumentSnapshot> temp =
-                  await userMaintainer.searchTweets(value.split(" "));
-              print("recieved results");
-              setState(() {
-                searchedImageSnapShot = temp;
-              });
+            onSubmitted: (value) {
+              userActivity.createSearchList(value);
+              // userActivity.searchImagePosts(value.split(" "));
+              // userActivity.searchTweetPosts(value.split(" "));
+              print("I got clicked-----------");
             },
           ),
         ),
@@ -59,12 +70,15 @@ class _SearchScreenState extends State<SearchScreen> {
           Container(
             width: MediaQuery.of(context).size.width,
             margin: EdgeInsets.symmetric(vertical: 10),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
+            height: 50,
+            child: ListView(
+              scrollDirection: Axis.horizontal,
               children: [
                 FlatButton(
                   onPressed: () {
-                    _controller.jumpToPage(0);
+                    _controller.animateToPage(0,
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -83,7 +97,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 FlatButton(
                   onPressed: () {
-                    _controller.jumpToPage(1);
+                    _controller.animateToPage(1,
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -102,7 +118,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 FlatButton(
                   onPressed: () {
-                    _controller.jumpToPage(2);
+                    _controller.animateToPage(2,
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -121,7 +139,9 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
                 FlatButton(
                   onPressed: () {
-                    _controller.jumpToPage(3);
+                    _controller.animateToPage(3,
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn);
                   },
                   child: Container(
                     decoration: BoxDecoration(
@@ -138,9 +158,49 @@ class _SearchScreenState extends State<SearchScreen> {
                     ),
                   ),
                 ),
+                FlatButton(
+                  onPressed: () {
+                    _controller.animateToPage(4,
+                        duration: Duration(milliseconds: 400),
+                        curve: Curves.fastOutSlowIn);
+                  },
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(100),
+                      color:
+                          currentPageId == 4 ? Colors.teal : Colors.transparent,
+                    ),
+                    padding: EdgeInsets.all(10),
+                    child: Text(
+                      "Accounts",
+                      style: TextStyle(
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
+          userActivity.searchString != null
+              ? Container(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Searched Results"),
+                      GestureDetector(
+                          onTap: () {
+                            userActivity.clearSearchLists();
+                          },
+                          child: Text(
+                            "Clear",
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ))
+                    ],
+                  ),
+                )
+              : Container(),
           Expanded(
             child: Container(
               width: MediaQuery.of(context).size.width,
@@ -152,18 +212,11 @@ class _SearchScreenState extends State<SearchScreen> {
                   });
                 },
                 children: [
-                  SearchImages(
-                    searchedImageList: searchedImageSnapShot,
-                  ),
-                  TweetSection(
-                    all: true,
-                  ),
-                  PollSection(
-                    all: true,
-                  ),
-                  DocsSection(
-                    all: true,
-                  ),
+                  SearchImages(),
+                  SearchTweets(),
+                  SearchPolls(),
+                  SearchDocs(),
+                  SearchAccounts()
                 ],
               ),
             ),

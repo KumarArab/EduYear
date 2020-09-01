@@ -4,7 +4,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'dart:io';
 
 class UserMaintainer {
 //Make User Ready
@@ -25,7 +28,15 @@ class UserMaintainer {
         //fetch data of user and store it to shared shared_preferences
       } else {
         //send to GetDetails Screens
-        Navigator.pushNamed(context, GetDetails.routeName, arguments: user);
+
+        Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => HomeScreen()),
+            (Route<dynamic> route) => false);
+
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            GetDetails.routeName, (route) => false,
+            arguments: user);
+        //  Navigator.pushNamed(context, GetDetails.routeName, arguments: user);
         //get the details
         // create new user node and store data
         //store the same in shared prefs
@@ -45,7 +56,10 @@ class UserMaintainer {
         //fetch data of user and store it to shared shared_preferences
       } else {
         //send to GetDetails Screens
-        Navigator.pushNamed(context, GetDetails.routeName, arguments: user);
+        // Navigator.pushNamed(context, GetDetails.routeName, arguments: user);
+        Navigator.of(context).pushNamedAndRemoveUntil(
+            GetDetails.routeName, (route) => false,
+            arguments: user);
         //get the details
         // create new user node and store data
         //store the same in shared prefs
@@ -59,26 +73,25 @@ class UserMaintainer {
       documentList =
           (await Firestore.instance //search for the userid in User node
                   .collection("Users")
-                  .where("email", isEqualTo: user.email)
+                  .where("user_id", isEqualTo: user.email)
                   .getDocuments())
               .documents;
     } else {
       documentList =
           (await Firestore.instance //search for the userid in User node
                   .collection("Users")
-                  .where("phoneNumber", isEqualTo: user.phoneNumber)
+                  .where("user_id", isEqualTo: user.phoneNumber)
                   .getDocuments())
               .documents;
     }
-
+    print(user.email);
     if (documentList.length == 1) {
-      //if exists return true else false
       print(
           "User exits-----------------------------------------------------------------------------");
       return true;
     } else {
       print(
-          "User don't exists ${documentList.length}--------------------------------------------------------------------");
+          "User don't exists   --------------------------------------------------------------------");
       return false;
     }
   }
@@ -91,34 +104,30 @@ class UserMaintainer {
   Future<void> saveUserDataToLocal(Map<String, dynamic> userData) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     prefs.setString("name", userData["name"]);
-    prefs.setString("email", userData["email"]);
-    prefs.setString("phoneNumber", userData["phoneNumber"]);
+    prefs.setString("user_id", userData["user_id"]);
     prefs.setString("profile_pic", userData["profile_pic"]);
-    prefs.setString("uid", userData["uid"]);
-    prefs.setInt("no_of_posts", int.tryParse(userData["no_of_posts"]));
-    // List<dynamic> tempsubscribedList = userData["subscribed"];
-    List<String> subscribedList = [
-      userData["email"] != null ? userData["email"] : userData["phoneNumber"]
-    ];
-    // for (int i = 0; i < tempsubscribedList.length; i++) {
-    //   subscribedList.add(tempsubscribedList[i].toString());
-    // }
+    prefs.setString("bio", userData["bio"]);
+    prefs.setInt("followers", userData["followers"]);
+    prefs.setInt("followings", userData["followings"]);
+    prefs.setBool("verified", userData["verified"]);
+    List<dynamic> tempsubscribedList = userData["subscribed"];
+    List<String> subscribedList = [];
+    for (int i = 0; i < tempsubscribedList.length; i++) {
+      subscribedList.add(tempsubscribedList[i].toString());
+    }
     prefs.setStringList("subscribed", subscribedList);
   }
 
   Future<String> getUserId() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    String id = prefs.getString("email") != null
-        ? prefs.getString("email")
-        : prefs.getString("phoneNumber");
+    String id = prefs.getString("user_id");
     return id;
   }
 
-  Future<String> getUserName(String id) async {
-    DocumentSnapshot ds =
-        await Firestore.instance.collection("Users").document(id).get();
-    String username = ds["name"];
-    return username;
+  Future<String> getUserName() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String name = prefs.getString("name");
+    return name;
   }
 
   Future<int> countPost(String userId, String postTpe) async {
@@ -126,42 +135,6 @@ class UserMaintainer {
     documentList =
         (await Firestore.instance //search for the userid in User node
                 .collection(postTpe)
-                .where("user_id", isEqualTo: userId)
-                .getDocuments())
-            .documents;
-    return documentList.length;
-  }
-
-  Future<int> countTweetPost() async {
-    String userId = await getUserId();
-    List<DocumentSnapshot> documentList;
-    documentList =
-        (await Firestore.instance //search for the userid in User node
-                .collection("Tweet-Posts")
-                .where("user_id", isEqualTo: userId)
-                .getDocuments())
-            .documents;
-    return documentList.length;
-  }
-
-  Future<int> countPollPost() async {
-    String userId = await getUserId();
-    List<DocumentSnapshot> documentList;
-    documentList =
-        (await Firestore.instance //search for the userid in User node
-                .collection("Poll-Posts")
-                .where("user_id", isEqualTo: userId)
-                .getDocuments())
-            .documents;
-    return documentList.length;
-  }
-
-  Future<int> countDocPost() async {
-    String userId = await getUserId();
-    List<DocumentSnapshot> documentList;
-    documentList =
-        (await Firestore.instance //search for the userid in User node
-                .collection("Doc-Posts")
                 .where("user_id", isEqualTo: userId)
                 .getDocuments())
             .documents;
@@ -180,43 +153,102 @@ class UserMaintainer {
     return documentList;
   }
 
-  Future<List<DocumentSnapshot>> searchTweets(List<String> searchArray) async {
-    // String userId = await getUserId();
-    List<DocumentSnapshot> documentList;
-    documentList =
-        (await Firestore.instance //search for the userid in User node
-                .collection("Image-Posts")
-                .where("tags", arrayContainsAny: searchArray)
-                .getDocuments())
-            .documents;
-    return documentList;
+  void showToast(String message) {
+    Fluttertoast.showToast(
+        msg: message,
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.black.withOpacity(0.6),
+        textColor: Colors.white,
+        fontSize: 16.0);
   }
 
+  void showDailogBox(
+      BuildContext context, Widget titleWidget, Widget subtitleWidget) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: titleWidget,
+        content: subtitleWidget,
+      ),
+    );
+  }
+
+//  SUBSCRIBE A USER
   Future<void> subscribe(String visitorId) async {
     String userId = await getUserId();
-    await Firestore.instance.collection("Users").document(userId).updateData({
-      "subscribed": FieldValue.arrayUnion([visitorId])
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    DocumentReference visitorReference =
+        Firestore.instance.collection("Users").document(visitorId);
+    DocumentReference userReference =
+        Firestore.instance.collection("Users").document(userId);
+
+    DocumentSnapshot visitorSnapshot = await visitorReference.get();
+    DocumentSnapshot userSnapshot = await userReference.get();
+
+//FIRST INCREASE THE FOLLOWER COUNT OF VISITED ACCOUNT
+    int visitorFollowerCount = visitorSnapshot["followers"];
+    visitorReference.updateData({"followers": visitorFollowerCount + 1});
+
+//INCREASE THE FOLLOWING COUNT OF USER ACCOUNT AND ADD IT TO LIST
+    int userFollowingCount = userSnapshot["followings"];
+    await userReference.updateData({
+      "subscribed": FieldValue.arrayUnion([visitorId]),
+      "followings": userFollowingCount + 1,
     });
+//UPDATE THE USER DATA LOCALLY
+    List<String> subscribedList = prefs.getStringList("subscribed");
+    subscribedList.add(visitorId);
+    prefs.setStringList("subscribed", subscribedList);
+    prefs.setInt("followings", userFollowingCount + 1);
   }
 
+//  UNSUBSCRIBE A USER
   Future<void> unsubscribe(String visitorId) async {
     String userId = await getUserId();
-    await Firestore.instance.collection("Users").document(userId).updateData({
-      "subscribed": FieldValue.arrayRemove([visitorId])
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    DocumentReference visitorReference =
+        Firestore.instance.collection("Users").document(visitorId);
+    DocumentReference userReference =
+        Firestore.instance.collection("Users").document(userId);
+
+    DocumentSnapshot visitorSnapshot = await visitorReference.get();
+    DocumentSnapshot userSnapshot = await userReference.get();
+
+//FIRST INCREASE THE FOLLOWER COUNT OF VISITED ACCOUNT
+    int visitorFollowerCount = visitorSnapshot["followers"];
+    visitorReference.updateData({"followers": visitorFollowerCount - 1});
+
+//INCREASE THE FOLLOWING COUNT OF USER ACCOUNT AND ADD IT TO LIST
+    int userFollowingCount = userSnapshot["followings"];
+    await userReference.updateData({
+      "subscribed": FieldValue.arrayRemove([visitorId]),
+      "followings": userFollowingCount - 1,
     });
+//UPDATE THE USER DATA LOCALLY
+    List<String> subscribedList = prefs.getStringList("subscribed");
+    subscribedList.remove(visitorId);
+    prefs.setStringList("subscribed", subscribedList);
+    prefs.setInt("followings", userFollowingCount - 1);
   }
 
-  Future<void> addSubscriberLocally(String args) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> subscribedList = prefs.getStringList("subscribed");
-    subscribedList.add(args);
-    prefs.setStringList("subscribed", subscribedList);
-  }
+  Future<File> testCompressAndGetFile(File file, String targetPath) async {
+    int quality = 50;
+    double filesize = file.lengthSync() / (1024 * 1024);
+    if (filesize < 1) {
+      quality = 75;
+    }
+    var result = await FlutterImageCompress.compressAndGetFile(
+      file.absolute.path,
+      targetPath,
+      quality: quality,
+      rotate: 0,
+    );
 
-  Future<void> removeSubscriberLocally(String args) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> subscribedList = prefs.getStringList("subscribed");
-    subscribedList.remove(args);
-    prefs.setStringList("subscribed", subscribedList);
+    print(file.lengthSync());
+    print(result.lengthSync());
+
+    return result;
   }
 }

@@ -3,27 +3,13 @@ import 'package:app/Screens/Home%20Views/image_view.dart';
 import 'package:app/Screens/Home%20Views/poll_view.dart';
 import 'package:app/Screens/Home%20Views/tweet_view.dart';
 import 'package:app/Screens/banners.dart';
-import 'package:app/Screens/post_screens/post_Image.dart';
-import 'package:app/Screens/post_screens/post_document.dart';
-import 'package:app/Screens/post_screens/post_polls.dart';
-import 'package:app/Screens/post_screens/post_tweet.dart';
-import 'package:app/Screens/Search%20Views/search_screen.dart';
-import 'package:app/Screens/Profile/user_profile.dart';
 import 'package:app/helpers/common_widgets.dart';
 import 'package:app/helpers/handle_dynamicLinks.dart';
+import 'package:app/helpers/user_data.dart';
 import 'package:app/helpers/user_maintainance.dart';
-import 'package:app/models/image_post_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/scheduler.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
-import '../widgets/button.dart';
-import 'dart:io';
 
 class HomeScreen extends StatefulWidget {
   static const String routeName = "/home";
@@ -40,71 +26,81 @@ class _HomeScreenState extends State<HomeScreen> {
     initialPage: 0,
   );
 
+  bool pop = false;
+
   @override
   void didChangeDependencies() async {
+    Provider.of<UserData>(context, listen: false).setuserData();
+    Provider.of<UserData>(context, listen: false).setSubscriberList();
     await dynamicLinksService.handleDynamicLinks(context);
     super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        elevation: 0,
+    final userData = Provider.of<UserData>(context);
+    return WillPopScope(
+      onWillPop: () async {
+        if (!pop) {
+          userMaintainer.showToast("Back press once more to exit");
+          pop = true;
+          return false;
+        }
+        return true;
+      },
+      child: Scaffold(
         backgroundColor: Colors.white,
-        title: Text(
-          "APPNAME",
-          style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+        appBar: AppBar(
+          elevation: 0,
+          backgroundColor: Colors.white,
+          title: Text(
+            "EDUYEAR",
+            style: TextStyle(fontWeight: FontWeight.w700, color: Colors.black),
+          ),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.bookmark, color: Colors.teal),
+              onPressed: () {
+                Navigator.pushNamed(context, Banners.routeName);
+              },
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.notification_important, color: Colors.black),
-            onPressed: () {
-              Navigator.pushNamed(context, Banners.routeName);
-            },
-          ),
-        ],
-      ),
-      bottomNavigationBar: Manual(
-        screen: "home",
-      ),
-      body: Stack(
-        children: [
-          PageView(
-            controller: _controller,
-            children: [
-              ImageSection(
-                all: false,
-              ),
-              TweetSection(
-                all: false,
-              ),
-              PollSection(
-                all: false,
-              ),
-              DocsSection(
-                all: false,
-              ),
-            ],
-          ),
-          // Positioned(
-          //   bottom: 0,
-          //   child:
-          // )
-
-          // Positioned(
-          //   bottom: 20,
-          //   right: 20,
-          //   child: FloatingActionButton(
-          //     backgroundColor: Colors.black,
-          //     onPressed: () {
-          //       showAlertDailogBox(context);
-          //     },
-          //     child: Icon(Icons.menu, color: Colors.white),
-          //   ),
-          // ),
-        ],
+        bottomNavigationBar: Manual(
+          screen: "home",
+        ),
+        body: PageView(
+          controller: _controller,
+          onPageChanged: (val) {
+            pop = false;
+          },
+          children: [
+            ImageSection(
+              query: Firestore.instance
+                  .collection("Image-Posts")
+                  .where("user_id", whereIn: userData.subscriberList)
+                  .snapshots(),
+            ),
+            TweetSection(
+              query: Firestore.instance
+                  .collection("Tweet-Posts")
+                  .where("user_id", whereIn: userData.subscriberList)
+                  .snapshots(),
+            ),
+            PollSection(
+              query: Firestore.instance
+                  .collection("Poll-Posts")
+                  .where("user_id", whereIn: userData.subscriberList)
+                  .snapshots(),
+            ),
+            DocsSection(
+              query: Firestore.instance
+                  .collection("Doc-Posts")
+                  .where("user_id", whereIn: userData.subscriberList)
+                  .snapshots(),
+            ),
+          ],
+        ),
       ),
     );
   }
