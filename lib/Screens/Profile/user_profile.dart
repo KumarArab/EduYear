@@ -28,7 +28,6 @@ class UserProfile extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              height: MediaQuery.of(context).size.height * 0.5,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                 image: DecorationImage(
@@ -44,6 +43,9 @@ class UserProfile extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
+                    SizedBox(
+                      height: 20,
+                    ),
                     Container(
                       height: MediaQuery.of(context).size.width * 0.45,
                       width: MediaQuery.of(context).size.width * 0.45,

@@ -1,5 +1,7 @@
 import 'package:app/Provider/user_activity.dart';
+import 'package:app/Screens/Profile/user_profile.dart';
 import 'package:app/Screens/Profile/visit_profile.dart';
+import 'package:app/helpers/user_maintainance.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -28,6 +30,7 @@ class SearchAccounts extends StatelessWidget {
 
 class SearchSection extends StatelessWidget {
   final Stream<QuerySnapshot> query;
+  final UserMaintainer userMaintainer = UserMaintainer();
   SearchSection({this.query});
 
   @override
@@ -44,35 +47,50 @@ class SearchSection extends StatelessWidget {
                   DocumentSnapshot products = snapshot
                       .data.documents[snapshot.data.documents.length - 1 - i];
                   return ListTile(
-                    leading: Container(
-                      height: 40,
-                      width: 40,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(100),
-                        child: Image.network(
-                          products["profile_pic"],
-                          fit: BoxFit.cover,
+                      leading: Container(
+                        height: 40,
+                        width: 40,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(100),
+                          child: Image.network(
+                            products["profile_pic"],
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
-                    ),
-                    title: Text(
-                      products["name"],
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (ctx) => VisitProfile(
-                          visitorId: products["user_id"],
+                      title: Text(
+                        products["name"],
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ),
-                  );
+                      onTap: () async {
+                        String userid = await userMaintainer.getUserId();
+                        userid != products["user_id"]
+                            ? Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (ctx) => VisitProfile(
+                                    visitorId: products["user_id"],
+                                  ),
+                                ),
+                              )
+                            : Navigator.pushReplacementNamed(
+                                context, UserProfile.routeName);
+                      }
+
+                      // => Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (ctx) => VisitProfile(
+                      //       visitorId: products["user_id"],
+                      //     ),
+                      //   ),
+                      // ),
+                      );
                 },
                 itemCount: snapshot.data.documents.length,
               );

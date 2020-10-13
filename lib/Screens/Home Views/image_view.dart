@@ -45,39 +45,31 @@ class ImageSection extends StatelessWidget {
         builder: (context, snapshot) {
           return !snapshot.hasData
               ? Center(child: Text('PLease Wait'))
-              : ListView.builder(
-                  itemCount: snapshot.data.documents.length,
-                  itemBuilder: (context, index) {
-                    DocumentSnapshot products = snapshot.data
-                        .documents[snapshot.data.documents.length - 1 - index];
-                    // Map<String, dynamic> imagesMap = new Map<String, dynamic>();
-                    // imagesMap = products["images"];
-                    // imagesMap != null
-                    //     ? imagesMap.forEach((key, value) {
-                    //         mapurls.add(value);
-                    //       })
-                    //     : {};
+              : (snapshot.data.documents.length > 0
+                  ? ListView.builder(
+                      itemCount: snapshot.data.documents.length,
+                      itemBuilder: (context, index) {
+                        DocumentSnapshot products = snapshot.data.documents[
+                            snapshot.data.documents.length - 1 - index];
 
-                    // List<dynamic> likes = products["likes"];
-
-                    // bool isAlreadyLiked = false;
-                    // if (likes.contains(
-                    //     Provider.of<UserData>(context).currentUserId)) {
-                    //   isAlreadyLiked = true;
-                    // }
-
-                    return (ImageCard(
-                      imageUrl: createImageList(products["images"]),
-                      caption: products["caption"],
-                      user_id: products["user_id"],
-                      postNo: products["timestamp"],
-                      likes_count: products["likes_count"],
-                      isAlreadyLiked:
-                          checkLikeStatus(products["likes"], context),
-                      comments: products["Comments"],
+                        return (ImageCard(
+                          imageUrl: createImageList(products["images"]),
+                          caption: products["caption"],
+                          user_id: products["user_id"],
+                          postNo: products["timestamp"],
+                          likes_count: products["likes_count"],
+                          isAlreadyLiked:
+                              checkLikeStatus(products["likes"], context),
+                          comments: products["Comments"],
+                        ));
+                      },
+                    )
+                  : Center(
+                      child: Text(
+                        "No posts to show!",
+                        textAlign: TextAlign.center,
+                      ),
                     ));
-                  },
-                );
         },
       ),
     );

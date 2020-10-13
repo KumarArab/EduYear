@@ -19,7 +19,9 @@ class TweetSection extends StatelessWidget {
         stream: query,
         builder: (context, snapshot) {
           return !snapshot.hasData
-              ? Text('PLease Wait')
+              ? Center(
+                  child: Text('PLease Wait'),
+                )
               : ListView.builder(
                   itemCount: snapshot.data.documents.length,
                   itemBuilder: (context, index) {
@@ -41,10 +43,6 @@ class TweetSection extends StatelessWidget {
                       isAlreadyLiked: isAlreadyLiked,
                       comments: products["Comments"],
                     ));
-                    //}
-
-                    // return Container(
-                    //     child: ImageCard(imageUrl: products["url"]));
                   },
                 );
         },

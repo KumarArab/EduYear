@@ -173,7 +173,7 @@ class Manual extends StatelessWidget {
     }
     return Container(
       width: MediaQuery.of(context).size.width,
-      height: 70,
+      height: MediaQuery.of(context).size.height * 0.08,
       color: Colors.white.withOpacity(0.5),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -342,11 +342,13 @@ class PostOwnerDetails extends StatelessWidget {
             SizedBox(
               width: 10,
             ),
-            Text(
-              username,
-              style: TextStyle(
-                fontSize: 20,
-                color: Colors.black,
+            FittedBox(
+              child: Text(
+                username,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Colors.black,
+                ),
               ),
             ),
           ],

@@ -15,6 +15,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
   bool isLoading = false;
   @override
   Widget build(BuildContext context) {
+    final deviceHeight = MediaQuery.of(context).size.height;
     final loginState = Provider.of<LoginStore>(context);
     return Scaffold(
         body: isLoading
@@ -46,7 +47,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                         Container(
                           height: MediaQuery.of(context).size.height * 0.6,
                           width: double.infinity,
-                          padding: const EdgeInsets.all(40),
+                          padding: const EdgeInsets.all(20),
                           decoration: BoxDecoration(
                             color: Color(0xfffefefe),
                             borderRadius: BorderRadius.only(
@@ -64,8 +65,10 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                 children: [
                                   Container(
                                     height: MediaQuery.of(context).size.height *
-                                        0.08,
+                                        0.1,
                                     width: double.infinity,
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 10),
                                     child: Swiper(
                                       itemBuilder:
                                           (BuildContext context, int index) {
@@ -98,7 +101,7 @@ class _SignUpMethodsState extends State<SignUpMethods> {
                                           const Text(
                                             "SignUp / LogIn",
                                             style: const TextStyle(
-                                                fontSize: 35,
+                                                fontSize: 30,
                                                 fontFamily: "Poppins",
                                                 color: Colors.black87),
                                           ),

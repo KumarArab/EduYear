@@ -20,7 +20,9 @@ class PollSection extends StatelessWidget {
         stream: query,
         builder: (context, snapshot) {
           return !snapshot.hasData
-              ? Text('PLease Wait')
+              ? Center(
+                  child: Text('PLease Wait'),
+                )
               : ListView.builder(
                   itemCount: snapshot.data.documents.length,
                   itemBuilder: (context, index) {

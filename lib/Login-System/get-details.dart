@@ -141,6 +141,7 @@ class _GetDetailsState extends State<GetDetails> {
                             color: Colors.black,
                           ),
                           width: MediaQuery.of(context).size.width * 0.55,
+                          height: MediaQuery.of(context).size.width * 0.55,
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(500),
                             child: newImagePath != null

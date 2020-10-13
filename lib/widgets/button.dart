@@ -9,8 +9,9 @@ class Button extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final deviceHeight = MediaQuery.of(context).size.height;
     return Container(
-      height: 60,
+      height: deviceHeight * 0.08,
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(100),
@@ -28,8 +29,8 @@ class Button extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              height: 30,
-              width: 30,
+              height: deviceHeight * 0.04,
+              width: deviceHeight * 0.04,
               child: Image.asset(imageAsset),
             ),
             SizedBox(
